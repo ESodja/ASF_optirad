@@ -134,11 +134,6 @@ if(pigsinzone>0){
 	}
 # 	fullZONEpigs<-fullZONEpigs[complete.cases(fullZONEpigs),,drop=FALSE] ## probably don't need this unless bugs are making NA's somewhere
 
-	## this structure glosses over the differences between starting at the inner range of the radius and the outer range.
-	## if you're in the center, you could probably make this approximation for how likely it is that you're going to run into a pig. If you're on the edge, you're probably not dealing with the same density... maybe it's okay, but I would prefer some kind of search pattern function that takes into account the difference in search area/overlap if x people start and the middle and work outwards, vs. the same number starting around the edge and looping in or something.
-	## This would become especially important when terrain/grid environment factors come into play -- depending on where the first pig is found, the edge may be good or bad habitat, which would affect where you should look.
-	### MAYBE an alternative could be choose search locations by habitat quality within the distance. ???
-
 	#%density of all live and dead pigs in the zone
 	Dr=pigsinzone/ZONEkm2
 	#determine density-dependent capture probability in this radius
