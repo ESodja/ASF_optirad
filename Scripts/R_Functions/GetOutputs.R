@@ -1,6 +1,5 @@
 
 GetOutputs<-function(pop,centroids,BB,Incidence,Tculled,ICtrue,out,detectday,Ct,out.opts,input.opts){
-  #print("Entering GetOutputs")
   
   #List of outputs created here:	
 	#Tinc #sum of all exposures over simulation 
@@ -87,19 +86,16 @@ list.all=list("Tinc"=Tinc,
 
 if("sounderlocs"%in%out.opts){
   
-  #print("Summarizing sounderlocs")
-  #print(input.opts$loc.list)
   loc.list=input.opts$loc.list
 for(i in 1:length(input.opts$loc.list)){
 
 
   if(length(loc.list[[i]])!=0){
-  #print(loc.list[[i]][,1])
 
   locs.i=as.data.frame(centroids[matrix(loc.list[[i]],ncol=7)[,1],,drop=FALSE])
 
 #   colnames(locs.i)=c("x","y","unknown") ## this causes issues if you have a homogeneous landscape (centroids has two columns, not three)
-  colnames(locs.i)=c("x","y","unknown")[seq(ncol(locs.i))] ## a potential fix...
+  colnames(locs.i)=c("x","y","unknown")[seq(ncol(locs.i))]
   locs.i$timestep=i
   locs.i$S=loc.list[[i]][,2]
   locs.i$E=loc.list[[i]][,3]
@@ -107,7 +103,6 @@ for(i in 1:length(input.opts$loc.list)){
   locs.i$R=loc.list[[i]][,5]
   locs.i$C=loc.list[[i]][,6]
   locs.i$Z=loc.list[[i]][,7]
-  #print(locs.i)
   if(i==1){
     locs.df=locs.i
   } else{
@@ -155,6 +150,7 @@ if("alldetections"%in%out.opts){
   if (sample == 1) {
     # Get the sampled pigs for the timestep
     pigs_sampled_timestep = input.opts$pigs_sampled_timestep
+    ## check these hard-coded values
     sampled_pigs_column <- matrix(unlist(pigs_sampled_timestep), nrow = 52, ncol = 1)  # Convert to a matrix (1 row, 52 columns)
     sampled_pigs_column_dup <- matrix(rep(sampled_pigs_column, each = 2), ncol = 1)
     # Combine the live detections with the sampled pigs as a new column
@@ -163,7 +159,6 @@ if("alldetections"%in%out.opts){
 }
 #Get Incidence and R0 vals summarized in data frame
 if("incidence"%in%out.opts){
-  #print("Summarizing incidence")
   
   #Timestep
   #Num new exposures from infected (incidence)

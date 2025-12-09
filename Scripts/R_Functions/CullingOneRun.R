@@ -13,7 +13,7 @@ if(length(idNEW)>0){
 	#col 1-each grid cell ID with detected infection
 	#col 2-each paired grid cell
 	#col 3-distance between infected grid cell ID with detection and each grid cell
-	pairedIDs<-matrix(nrow=nrow(centroids)*length(idNEW),ncol=3)
+	pairedIDs<-matrix(nrow=cells*length(idNEW),ncol=3)
 	#get matrix of each infected grid cell ID paired with every other cell ID
 	if(length(idNEW)==1){
 		pairedIDs[1:cells,1]<-idNEW
@@ -88,7 +88,7 @@ Ct=pigsinzone/totalpigs
 #####################################
 
 #if there are pigs to cull... 
-if(is.na(pigsinzone)){pigsinzone=0} ## if there are na's here, it means there are issues further up that probably shouldn't be glossed over...
+# if(is.na(pigsinzone)){pigsinzone=0} ## if there are na's here, it means there are issues further up that probably shouldn't be glossed over...
 if(pigsinzone>0){
 	#get number of pigs for each grid cell in zone
 	#and get their status, SEIRCZ

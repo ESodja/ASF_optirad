@@ -1,18 +1,15 @@
 FastMovement=function(pop,centroids,shape,rate,inc,mv_pref,RSF_mat=NULL,RSF_mat0=NULL){
 
+  cells <- nrow(centroids)
   #run checks to make sure objects input correctly
+  ## doesn't catch NULL RSF_mat(0) inputs
   if(mv_pref!=3){
     if(!missing(RSF_mat0)|!missing(RSF_mat)){
       message("mv_pref not set to RSF-availability (3), but RSF_mat supplied. Ignoring RSF_mat/RSF_mat0 input.")
     }
-  } else{
-    if(mv_pref==3){
-      if(missing(RSF_mat0)|missing(RSF_mat)){
+  } else if(mv_pref==3 & (missing(RSF_mat0)|missing(RSF_mat))){
       stop("mv_pref set to RSF-availability movement (3), but RSF matrices not supplied")
-      }
-    }
   }
-  
   
   #get distances from gamma distribution
   pop[,4]=rgamma(nrow(pop),shape=shape,rate=rate)
@@ -26,10 +23,10 @@ FastMovement=function(pop,centroids,shape,rate,inc,mv_pref,RSF_mat=NULL,RSF_mat0
   pop[,7]=pop[,3]
   
   #convert abundance/locs vector into long format
-  abund.mat=matrix(0,nrow=40000,ncol=1)
+  abund.mat=matrix(0,nrow=cells,ncol=1)
   abund.df=data.frame("abund"=pop[,1],"cell"=pop[,3])
   abund.df=abund.df %>% dplyr::group_by(cell) %>% dplyr::summarize("abund"=sum(abund)) %>% as.data.frame()
-  cells=data.frame("cell"=1:40000)
+  cells=data.frame("cell"=1:cells)
   abund.df=left_join(cells,abund.df,by="cell")
   abund.df$abund[is.na(abund.df$abund)]<-0
   abund.mat[,1]=abund.df$abund

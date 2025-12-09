@@ -4,7 +4,6 @@
 #SimulateOneRun<-function(Pcr,Pir,Pbd,death,F1,F2_int,F2_B,F2i_int,F2i_B,B1,B2,thyme,cells,N0,K,detectday,Rad,Intensity,alphaC,shift,centroids,cullstyle,inc,ss,gridlen,midpoint,pop,out.opts,grid.opts,rep,DetP){
 SimulateOneRun<-function(outputs,pop,centroids,grid,parameters,cpp_functions,K){
 require(dplyr)
-# p3 <- profvis({
 	for(i in 1:length(cpp_functions)){
 		print(paste0("sourcing ",cpp_functions[[i]]))
 		Rcpp::sourceCpp(cpp_functions[[i]])

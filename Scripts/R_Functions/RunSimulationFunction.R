@@ -57,7 +57,6 @@ for(v in 1:nrow(variables)){
 			#Do simulations
 			out.list=SimulateOneRun(outputs,pop,centroids,grid,parameters,cpp_functions,K)
 			#Handle outputs
-# 			browser()
 
 			## test these outputs if out.opts doesn't include them
 			## id by variable combination, landscape, rep, and timestep for one row per timestep data
@@ -131,7 +130,6 @@ for(v in 1:nrow(variables)){
 			summ.vals.r = matrix(c(id.r, unlist(out.list[c(1,2,4:9,length(out.list))])), nrow=1)
 			colnames(summ.vals.r) <- c('var','land','rep',names(out.list[c(1,2,4:9,length(out.list))]))
 
-# browser()
 			# Put new results in output objects OR add new results to existing output objects
 			if(r==1&l==1&v==1){
 				tm.mat = tm.mat.r

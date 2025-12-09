@@ -62,6 +62,19 @@ if("idzone"%in%out.opts){
   idzone.mat=matrix(nrow=0,ncol=2)
 }
 
+if("alldetections" %in% out.opts){
+  detections=matrix(nrow=0, ncol=7)
+}
+
+if("incidence" %in% out.opts){
+  incidence=matrix(nrow=0, ncol=6)
+}
+
+## a cleaner way to do this, if we want (would have to rename some objects) is to use
+## lapply(out.opts, function(x) eval(parse(text=paste0(x, '_', [name of the object to initialize], ' <- ', [some generic matrix or list thing, pre-alloated]))))
+## which would automatically execute lines of code like sounderlocs_output <- sounderloc_matrix
+## similar structures would work throughout the code and avoid the thousands of if "thing" in out.opts statements
+
 
 values = as.list(environment())
 values = values[setdiff(names(values), names(formals()))]
