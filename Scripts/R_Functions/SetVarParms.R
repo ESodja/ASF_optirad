@@ -19,6 +19,7 @@ SetVarParms<-function(parameters, inputs){
 ## this doesn't work -- no "input" parameter? commenting out lets the model run
 ## I switched to a character vector in Parameters.txt that defines which of the available variables (currently coded in _targets.R) should be used
 # 	variable=parameters[which(parameters=="input")]
+## some kind of issue with trying to get only one row with one density and one ss value from one state... lower priority but might be worth checking out
 	## pull in parameters
 	variable = parameters$input
 	## get the parameters with more than one value
@@ -28,13 +29,19 @@ SetVarParms<-function(parameters, inputs){
 	## get all combinations
 	temptab <- expand.grid(variable_messy)
 	## build out table of parameters that are defined in sync, e.g. B1, density, ss with specific state
+# 	B1_vals =
 	canonical.params <- data.frame(state = rep(parameters$state, each=length(parameters$density)),
 								density=rep(parameters$density, length(parameters$state)),
-								ss=rep(parameters$ss, length(parameters$state)),
-								B1=unlist(lapply(parameters$state, function(x){
-								parameters[paste0('B1_',x)]}))
+								ss=rep(parameters$ss, length(parameters$state)))
+# 								B1=unlist(lapply(parameters$state, function(x){parameters[paste0('B1_',x)]}), use.names=FALSE)
 # 								,B1=rep(c(parameters$B1_FL, parameters$B1_SC), each=length(parameters$state)/length(parameters$density))
-)
+# )
+
+	B1=unlist(lapply(parameters$state, function(x){parameters[paste0('B1_',x)]}))
+	names(B1) <- unlist(lapply(strsplit(names(B1), '_'), function(x) x[[2]]))
+	names(B1) <- unlist(lapply(strsplit(names(B1), '\\d'), function(x) x[[1]]))
+	B1_tab <- data.frame(state = names(B1), B1 = B1)
+	canonical.params <- merge(canonical.params, B1_tab, on=state)
 	## join user defined variables with canonical parameters
 	common.columns = names(canonical.params)[names(canonical.params) %in% names(temptab)]
 	result <- inner_join(temptab, canonical.params, by=common.columns) ## makes 'noise' without by= argument, but changes depending on user input
@@ -77,6 +84,7 @@ SetVarParms<-function(parameters, inputs){
 # 	}
 # 	## check names for good measure (i.e. to include singletons like "Rad")
 # 	colnames(result) <- unlist(lapply(strsplit(names(unlist(inputs, recursive=FALSE)), '.', fixed=TRUE), function(x) x[2]))
+
 	return(result)
 	
 }

@@ -15,7 +15,7 @@ setwd(this.path::this.dir())
 library(targets)
 library(tarchetypes)
 library(geotargets)
-library(crew)
+# library(crew)
 
 # This hardcodes the absolute path in _targets.yaml, so to make this more
 # portable, we rewrite it every time this pipeline is run (and we don't track
@@ -77,7 +77,9 @@ list(
   ### Read and format parameters file: -----------
   tar_target(parameters0,FormatSetParameters(parameters_txt)),
 
-  tar_target(variables,SetVarParms(parameters0,
+  tar_target(
+# tar_force(
+  variables,SetVarParms(parameters0,
 		inputs=list() ## changed to align parameter values with states (they were mixed)
 #     "state_basis" = data.frame("state"=c("FL","SC")),
 # 	"density_ss"=data.frame(
@@ -89,7 +91,8 @@ list(
 # 		"Rad"=c(5,10,15,20)
 # 		)
 # 			)
-		)),
+# 		),force=TRUE),
+)),
 	tar_target(parameters00,RemoveRedundantParms(parameters0)),
 
   ## Input cpp scripts as files to enable tracking -----  
@@ -145,7 +148,7 @@ list(
                                     ## make a grid either uniform or random with even initial pig locations
                                     InitializeGrids(c(parameters00$len,parameters00$inc),parameters00$grid.opt)
                                   } else if (parameters00$grid.opts == 'ras'){ ## if there is an input raster
-                                    InitializeGrids(plands_sprc, parameters00$grid.opts == 'ras')
+                                    InitializeGrids(plands_sprc, parameters00$grid.opts)
                                   }
                                 } else if (parameters00$pop_init_grid_opts == 'heterogeneous'){
                                   ## make a grid with uneven pig initial locations...
@@ -157,7 +160,7 @@ list(
                                       InitializeGrids(c(parameters00$len,parameters00$inc),parameters00$grid.opt)
                                     } else if (parameters00$grid.opts == 'ras'){
                                       ## random pig distribution with raster landscape
-                                      InitializeGrids(plands_sprc, parameters00$grid.opts == 'ras')
+                                      InitializeGrids(plands_sprc, parameters00$grid.opts)
                                     }
                                 }
                               }),
@@ -167,7 +170,7 @@ list(
 	
   ## Run Model ---------------
   #Use tar_force format here because otherwise will only run if code has been updated
-  #tar_force(
+#   tar_force(
 	tar_target(
   	out.list,
   	RunSimulationReplicates(
@@ -177,9 +180,10 @@ list(
   		cpp_functions=
   			list(Fast_FOI_Matrix_script,
   			Movement_Fast_Generalized_script),
-  		reps=2
+  		reps=parameters$nrep
   		)
-  	)#,
+#   		,force=TRUE
+  	),
 	
 	## Run MF Model ---------------
 	#tar_target(
@@ -192,8 +196,12 @@ list(
 #  		)
 # 	)
 	
+	tar_target(
+      plot_outputs,
+      VisualOutputs(out.list, variables, land_grid_list))
   )
 
-  
+  ## just to show it actually did something
+# lapply(tar_read(out.list), function(x) {print(head(x))})
 
 

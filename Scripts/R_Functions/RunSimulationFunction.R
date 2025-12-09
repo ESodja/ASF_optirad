@@ -18,6 +18,8 @@
       #a nested list of grid parameters
 RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_functions, reps){
 
+print('runsimreps')
+# options(warn=2)
 	## Filters variables (parameters with >1 value) out of parameters
 	## selecting variables is done in SetVarParms.R
 	parameters <- parameters[names(parameters) %in% names(variables) == FALSE]
@@ -36,6 +38,7 @@ for(v in 1:nrow(variables)){
 	list2env(vars, .GlobalEnv)
 
 	#calc vals based on variables
+	## could set these as variables/parameter options
 	N0=dens*area
 	K=N0*1.5
 
@@ -54,31 +57,108 @@ for(v in 1:nrow(variables)){
 			#Do simulations
 			out.list=SimulateOneRun(outputs,pop,centroids,grid,parameters,cpp_functions,K)
 			#Handle outputs
+# 			browser()
 
-			#Handle effective removal rate
-			Ct.r=out.list$Ct
-			Ct.r=cbind(1:thyme,Ct.r)
-			Ct.r=cbind(rep(l,times=nrow(Ct.r)),Ct.r)
-			Ct.r=cbind(rep(v,times=nrow(Ct.r)),Ct.r)
-			colnames(Ct.r)=c("var","land","thyme","Ct")
-			#Handle sounderlocs
-			solocs.r=sounderlocsSummarize(out.list$sounderlocs,1)
-			solocs.r=solocs.r$SEIRCZ_total
-			solocs.r=cbind(rep(l,times=nrow(solocs.r)),solocs.r)
-			solocs.r=cbind(rep(v,times=nrow(solocs.r)),solocs.r)
-			colnames(solocs.r)[c(1,2)]=c("var","land")
+			## test these outputs if out.opts doesn't include them
+			## id by variable combination, landscape, rep, and timestep for one row per timestep data
+			end.tm = out.list$endtime
+			id.r = c(v,l,r)
+			tm.mat.r = cbind(matrix(id.r, nrow=end.tm, ncol=3, byrow=TRUE), seq(end.tm))
+			colnames(tm.mat.r) = c("var","land","rep","timestep")
+
+			#Handle effective removal rate (timestep output)
+# 			Ct.r=out.list$Ct
+# 			Ct.r=cbind(matrix(id.r, ncol=3, nrow=nrow(Ct.r), byrow=TRUE), 1:thyme, Ct.r)
+# 			Ct.r=cbind(rep(r,times=nrow(Ct.r)),Ct.r)
+# 			Ct.r=cbind(rep(l,times=nrow(Ct.r)),Ct.r)
+# 			Ct.r=cbind(rep(v,times=nrow(Ct.r)),Ct.r)
+			tm.mat.r <- cbind(tm.mat.r, out.list$Ct[seq(end.tm)])
+			colnames(tm.mat.r)[ncol(tm.mat.r)]="Ct"
+
+			# Births
+# 			BB.r = out.list$BB
+			tm.mat.r = cbind(tm.mat.r, out.list$BB[seq(end.tm)])
+			colnames(tm.mat.r)[ncol(tm.mat.r)] <- 'BB'
+
+			#Handle sounderlocs (optional...)
+			## seems like other things were supposed to happen in sounderlocsSummarize, if we want to use those this will have to change
+# 			browser()
+			if ("sounderlocs" %in% out.opts){
+				solocs.r=sounderlocsSummarize(out.list$sounderlocs,r)[[1]]
+	# 			solocs.r=solocs.r$SEIRCZ_total
+	# 			solocs.r=cbind(rep(l,times=nrow(solocs.r)),solocs.r)
+	# 			solocs.r=cbind(rep(v,times=nrow(solocs.r)),solocs.r)
+				tm.mat.r = cbind(tm.mat.r, solocs.r[3:8])
+			}
+
+			# detections (optional...)
+			## has a row for each timestep AND detection type, with timestep, code (1=live,0=dead), number of individuals detected, and position
+			## still need to test sample = 1
+			## might match with incidence?
+			if (end.tm > detectday & 'alldetections' %in% out.opts){
+				detections.r = out.list$alldetections
+				detections.r <- detections.r[detections.r[,1] <= end.tm & detections.r[,1] >= detectday,]
+				n.det = nrow(detections.r)
+				detections.r = cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)
+				colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
+			}
+
+
+			# incidence -- more rows than timesteps, separate output (optional...)
+			if ('incidence' %in% out.opts){
+				incidence.r = out.list$incidence
+				n.inc = nrow(incidence.r)
+				incidence.r = cbind(matrix(id.r, ncol=3, nrow=n.inc, byrow=TRUE), incidence.r)
+				colnames(incidence.r) <- c('var','land','rep','timestep','state','loc')
+			}
+
+			# idzone -- not sure what it looks like yet
+			# columms "cell" and "timestep"
+# 			if ('idzone' %in% out.opts){
+				# do idzone things, probably
+# 			}
+
+			# single value per vlr combination outputs
+			# Tinc
+			# sumTculled
+			# Mspread
+			# IConDD
+			# ICatDD
+			# TincToDD
+			# TincFromDD
+			# DET (total detections)
+			#
+			summ.vals.r = matrix(c(id.r, unlist(out.list[c(1,2,4:9,length(out.list))])), nrow=1)
+			colnames(summ.vals.r) <- c('var','land','rep',names(out.list[c(1,2,4:9,length(out.list))]))
+
+# browser()
+			# Put new results in output objects OR add new results to existing output objects
 			if(r==1&l==1&v==1){
-				solocs=solocs.r
-				Cto=Ct.r
-			} else{
-				solocs=rbind(solocs,solocs.r)
-				Cto=rbind(Cto,Ct.r)
+				tm.mat = tm.mat.r
+# 				solocs=solocs.r
+# 				Cto=Ct.r
+# 				BB=BB.r
+# 				idzone = idzone.r ## not done yet
+				summ.vals = summ.vals.r
+				if ("incidence" %in% out.opts) incidence = incidence.r
+				if (end.tm > detectday & "alldetections" %in% out.opts) detections = detections.r
+
+			} else {
+				tm.mat = rbind(tm.mat, tm.mat.r)
+# 				solocs = rbind(solocs, solocs.r)
+# 				Cto = rbind(Cto, Ct.r)
+# 				BB = rbind(BB, BB.r)
+# 				idzone = rbind(idzone, idzone.r) ## not done yet
+				summ.vals = rbind(summ.vals, summ.vals.r)
+				if ("incidence" %in% out.opts) incidence = rbind(incidence, incidence.r)
+				if (end.tm > detectday & "alldetections" %in% out.opts) detections = rbind(detections, detections.r)
 			}
 		}
 	}
 }
 
-return(list("solocs"=solocs,"Cto"=Cto))
+return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections))
+# return(list("solocs"=solocs,"Cto"=Cto))
 }
 
 

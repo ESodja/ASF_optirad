@@ -4,19 +4,19 @@
 #SimulateOneRun<-function(Pcr,Pir,Pbd,death,F1,F2_int,F2_B,F2i_int,F2i_B,B1,B2,thyme,cells,N0,K,detectday,Rad,Intensity,alphaC,shift,centroids,cullstyle,inc,ss,gridlen,midpoint,pop,out.opts,grid.opts,rep,DetP){
 SimulateOneRun<-function(outputs,pop,centroids,grid,parameters,cpp_functions,K){
 require(dplyr)
-
+# p3 <- profvis({
 	for(i in 1:length(cpp_functions)){
 		print(paste0("sourcing ",cpp_functions[[i]]))
 		Rcpp::sourceCpp(cpp_functions[[i]])
 		}
 
 ############################################################
-######## Release parameters to function environment ######## 
+######## Release parameters to function environment ########
 ############################################################
 list2env(parameters, .GlobalEnv)
 	
 ###########################################
-######## Initialize Output Objects ######## 
+######## Initialize Output Objects ########
 ###########################################
 list2env(outputs, .GlobalEnv)
 	
@@ -24,22 +24,27 @@ list2env(outputs, .GlobalEnv)
 Incidence[1]<-num_inf_0
 	
 ##################################
-######## Start simulation ######## 
+######## Start simulation ########
 ##################################
-  
-for(i in 1:thyme){
 
+# for(i in 1:thyme){
+
+# if(any(pop[,9,drop=FALSE]!=0|pop[,10,drop=FALSE]!=0|pop[,12,drop=FALSE]!=0)){
+## would be easier/cleaner to do a while loop or a single break condition in for loop instead of conditional continuation condition like this.
+i=0
+while(any(pop[,9,drop=FALSE]!=0|pop[,10,drop=FALSE]!=0|pop[,12,drop=FALSE]!=0) & i < thyme){
+i = i+1 ## keeps the counting clean if the virus dies out before 'thyme'
 print(paste0("timestep: ",i))
-if(any(pop[,9,drop=FALSE]!=0|pop[,10,drop=FALSE]!=0|pop[,12,drop=FALSE]!=0)){
+print(colSums(pop[,8:13]))
 
 if("sounderlocs"%in%out.opts){
   loc.list[[i]]=pop[,c(3,8:13)]
   }
 
 #####################################
-######## Track I/C locations ######## 
+######## Track I/C locations ########
 #####################################
-	print("Track I/C locs")
+# 	print("Track I/C locs")
 
 if(nrow(pop[pop[,10]>0,,drop=FALSE])>0){
 Isums[i]<-nrow(pop[pop[,10]>0,,drop=FALSE])
@@ -53,13 +58,15 @@ I_locs[[i]]<-pop[pop[,10]>0,3]
 C_locs[[i]]<-pop[pop[,12]>0,3]
 
 
-
 ##########################
-######## Movement ######## 
+######## Movement ########
 ##########################
 
+## currently these are missing; there is reference in the pre-targets model setup but not mentioned elsewhere
+# RSF_mat <- RSF_mat0 <- grid
 
 pop<-FastMovement(pop,centroids,shape,rate,inc,mv_pref)
+# pop<-FastMovement(pop,centroids,shape,rate,inc,mv_pref,RSF_mat,RSF_mat0)
 
 
 ###############################
@@ -67,9 +74,7 @@ pop<-FastMovement(pop,centroids,shape,rate,inc,mv_pref)
 ###############################
 #births, natural deaths, disease state changes (exposure, infection, recovery, death), carcass decay
 
-## many of these parameters are missing; looks like they are leftover from the pre-targets era
-st.list<-StateChanges(pop,centroids,nrow(centroids),parameters, i)
-# st.list<-StateChanges(pop,centroids,nrow(centroids),Pbd,B1,B2,F1,F2_int,F2_B,F2i_int,F2i_B,K,death,Pcr,Pir,Incidence,BB,i)
+  st.list<-StateChanges(pop, centroids, nrow(centroids), parameters, Incidence, BB, i)
 
 Eep_mat[i,]=st.list$Eep
 Sdpb_mat[i,]=st.list$Sdpb
@@ -159,10 +164,11 @@ if(sample == 1){ ## I think this is supposed to be the 'sample' parameter?
 }
 
 # If sampling turned off and it's detect day based on user input,
-# run FirstDetect because there are infected pigs to detect,  and Rad>0
-if(sample != 1 & i==detectday&sum(pop[, c(9, 10, 12)])>0&Rad>0){
-# if(sampling != 1 & i==detectday&sum(pop[, c(9, 10, 12)])>0&Rad>0){
-  fd.list<-FirstDetect(pop, i, POSlive, POSdead, POSlive_locs, POSdead_locs)
+# run FirstDetect because there are infected pigs to detect, and Rad>0
+if(sample != 1 & i == detectday & sum(pop[,c(9,10,12)]) > 0 & Rad > 0){
+# if(sampling != 1 & i==detectday&sum(pop[,c(9,10,12)])>0&Rad>0){
+
+  fd.list<-FirstDetect(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs)
   pop=fd.list[[1]]
   POSlive=fd.list[[2]]
   POSdead=fd.list[[3]]
@@ -174,67 +180,67 @@ if(sample != 1 & i==detectday&sum(pop[, c(9, 10, 12)])>0&Rad>0){
 
 ###**start day after day of first detection
 #######################################
-######## Initiate Culling Zone ######## 
+######## Initiate Culling Zone ########
 #######################################
 
-#if it is at least day after detect day,  and Rad>0
+#if it is at least day after detect day, and Rad>0
 if(sample != 1 & i > detectday & Rad > 0) {
 # if(sampling != 1 & i > detectday & Rad > 0) {
 
-	#new detections from last step, bc day lag 
+	#new detections from last step, bc day lag
 	#(either from initial detection or last culling period)
 	#get locations in grid for detections
-	idNEW=c(POSlive_locs[[i-1]],POSdead_locs[[i-1]])
+	idNEW <- c(POSlive_locs[[i-1]], POSdead_locs[[i-1]])
 	#remove NA/0 (may get NAs/zeroes if no live/dead detected)
-	idNEW<-idNEW[idNEW>0&!is.na(idNEW)]
-	idZONE_t=idZONE
+	idNEW <- idNEW[idNEW > 0 & !is.na(idNEW)]
+	idZONE_t <- idZONE
 	#if there were detections in previous time steps, only get newly detected infected grid cells
 	#"infected grid cell"=grid cell where there was an infected pig or carcass
-	if(length(idZONE_t[,1])>0){
-	uniqueidNEW<-which(!(idNEW %in% idZONE_t))
-	idNEW<-idNEW[uniqueidNEW]
-	} else{idNEW=idNEW}
+	if(length(idZONE_t[,1]) > 0){
+      uniqueidNEW <- which(!(idNEW %in% idZONE_t[,1])) ## because we are looking for only new detection locations, not locations anywhere in the zone
+      idNEW <- idNEW[uniqueidNEW]
+	} else {
+      idNEW <- idNEW
+    }
 
 	#Culling process
-	output.list<-CullingOneRun(pop,idNEW,idZONE,Intensity,alphaC,centroids,Rad,inc,i,detected,POSlive,POSdead,POSlive_locs,POSdead_locs,NEGlive,NEGdead,DetP,cullstyle)
+	output.list <- CullingOneRun(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad, inc, i, POSlive, POSdead, POSlive_locs, POSdead_locs, NEGlive, NEGdead, DetP, cullstyle)
 # 	output.list<-CullingOneRun(pop,idNEW,idZONE,Intensity,alphaC,centroids,Rad,inc,i,detected,POSlive,POSdead,POSlive_locs,POSdead_locs,NEGlive,NEGdead,DetP)
-	POSlive[[i]]<-output.list[[1]]
-	POSdead[[i]]<-output.list[[2]]
-	POSlive_locs[[i]]<-output.list[[3]]
-	POSdead_locs[[i]]<-output.list[[4]]
-	NEGlive[[i]]<-output.list[[5]]
-	NEGdead[[i]]<-output.list[[6]]
-	idZONE<-output.list[[7]]
-	removalcells[[i]]<-output.list[[8]]
-	culled<-output.list[[9]]
-	ZONEkm2[i,]<-output.list[[10]]
-	pop<-output.list[[11]]
-	Ct[i,1]<-output.list[[12]]
+	POSlive[[i]] <- output.list[[1]]
+	POSdead[[i]] <- output.list[[2]]
+	POSlive_locs[[i]] <- output.list[[3]]
+	POSdead_locs[[i]] <- output.list[[4]]
+	NEGlive[[i]] <- output.list[[5]]
+	NEGdead[[i]] <- output.list[[6]]
+	idZONE <- output.list[[7]]
+	removalcells[[i]] <- output.list[[8]]
+	culled <- output.list[[9]]
+	ZONEkm2[i,] <- output.list[[10]]
+	pop <- output.list[[11]]
+	Ct[i,1] <- output.list[[12]]
 	#Total number culled at each timestep
-	Tculled[i]=culled
-	
+	Tculled[i] <- culled
+
 	#compile optional outputs
 	if("idzone"%in%out.opts){
-
 	  #get list index
 	  idz=(detectday-i)
 	  if(idz==1){
-	    idzone.mat.idz=idzone[,2]
+	    idzone.mat.idz=idZONE[,2]
 	    idzone.mat=cbind(idzone.mat.idz,rep(i,length=length(idzone.mat.idz)))
 	    colnames(idzone.mat)=c("cell","timestep")
 	  } else{
 	    #only store new locations
-	    idzone.mat.idz=idzone[,2](which(!(idzone[,2])%in%idzone.mat[,1]))
+	    idzone.mat.idz=idZONE[,2][which(!(idZONE[,2])%in%idzone.mat[,1])]
 	    idzone.mat.idz=cbind(idzone.mat.idz,rep(i,length=length(idzone.mat.idz)))
 	    colnames(idzone.mat.idz)=c("cell","timestep")
 	  }
-	  
 	}
-	
-	
+
+
 } else{ #if greater than detectday closing bracket
 	Ct[i,1]=0
-	
+
 	} #else if not greater than detect day
 
 
@@ -264,12 +270,14 @@ ICtrue[i]<-(sum(colSums(pop)[c(9,10,12)])+1) #account for having removed that fi
 pigcols=c(1,8:13)
 pop=pop[which(rowSums(pop[,pigcols,drop=FALSE])!=0),,drop=FALSE]
 
-}}
+}
+# }}
 # } else{
 #   #print("Exiting loop, no infections")
 #   } #if any infected closing bracket/else
 # 	} #for timestep closing bracket
 
+	print('finish')
 #############################
 #############################
 if(length(out.opts)>0){
@@ -294,19 +302,19 @@ if("alldetections"%in%out.opts){
   templist = list(POSlive)  # directly create a list with POSlive
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "POSlive"
-  
+
   templist = list(POSdead)
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "POSdead"
-  
+
   templist = list(POSlive_locs)
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "POSlive_locs"
-  
+
   templist = list(POSdead_locs)
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "POSdead_locs"
-  
+
 #   if(sampling == 1){
   if(sample == 1){
     templist = list(pigs_sampled_timestep)  # directly create a list with pigs_sampled_timestep
@@ -320,12 +328,15 @@ if("incidence"%in%out.opts){
   templist[[1]]=inc.mat
   input.opts=append(input.opts,templist)
   names(input.opts)[length(input.opts)]="incidence"
-  
-  
+
+
 }
 }
 
 list.all<-GetOutputs(pop,centroids,BB,Incidence,Tculled,ICtrue,out,detectday,Ct,out.opts,input.opts)
+## want the end time as output to trim matrices
+list.all <- append(list.all, i)
+names(list.all)[length(list.all)] <- 'endtime'
 
 
 return(list.all)
