@@ -4,8 +4,6 @@ StateChanges<-function(pop,centroids,cells,parameters,Incidence,BB,i){
 ####################################################################
 ########### Initialize state change probability matrices ###########
 ####################################################################
-# p2 <- profvis({
-state.time0 <- Sys.time()
 list2env(parameters, .GlobalEnv)
 
 
@@ -40,8 +38,6 @@ Ccd[,1]=0
 Zcd=matrix(nrow=nrow(pop),ncol=1)
 Zcd[,1]=0
 
-print(paste0('time1 ', Sys.time()-state.time0))
-
 	
 ########################################
 ########### Determine Births ########### 
@@ -55,7 +51,6 @@ liveind<-sum(colSums(pop)[c(8,9,11)])
 
 #get row indices of live individuals
 liverows<-which(pop[,8,drop=FALSE]>0|pop[,9,drop=FALSE]>0|pop[,11,drop=FALSE]>0) #rownums with live indiv
-print(paste0('time2 ', Sys.time()-state.time0))
 
 #density-dependent birth rate
 # Brate=Pbd*liveind*(1-liveind/K) ## K is a parameter that may be good to tie to the environment
@@ -131,7 +126,6 @@ BB[i] = sum(piglets)
 #
 # }
 
-print(paste0('time3 ', Sys.time()-state.time0))
 
 ##############################################################
 ######## Determine disease state change probabilities ######## 
@@ -143,7 +137,6 @@ Pse<-FOI_R(pop,centroids,cells,B1,B2,F1,F2_int,F2_B,F2i_int,F2i_B) #cpp parallel
 #Pse<-FOIParallelFull(pop,centroids,cells,B1,B2,F1,F2_int,F2_B,F2i_int,F2i_B) #cpp parallel version, 22x faster than R version
 ## gives negative probabilities for cells without infected ? Might be because I have the wrong values for F2_int, etc.
 Pse[Pse < 0] <- 0 ## assuming these are actually probabilities
-print(paste0('time3.1 ', Sys.time()-state.time0))
 
 ## Exposed to infected
 Pei=1-exp(-1/(rpois(cells,4)/7)) #transitions exposure to infected
@@ -161,7 +154,6 @@ Pei=1-exp(-1/(rpois(cells,4)/7)) #transitions exposure to infected
 ## Infected to contageous corpse or recovered, depending on Pir (recovery rate)
 Pic=1-exp(-1/(rpois(cells,5)/7)) #transitions infected to either dead or recovered
 
-print(paste0('time4 ', Sys.time()-state.time0))
 # print(nrow(pop))
 # if (Sys.time()-state.time0 > 2) browser()
 ######For troubleshooting ML/R infection process diffs######
@@ -184,7 +176,6 @@ death=exp(-25+((1+death)*rowSums(pop[,c(8:11)])))/(1+exp(-25+((1+death)*rowSums(
 ## when population is too high, top and bottom of the above function become Inf, leading to NaN values which cause errors in rbinom()
 ## to prevent errors, change NaN values to 1 because this is a probability
 death[is.nan(death)] <- 1
-if (any(is.nan(death)))browser()
 #susceptible state changes
 Sdpd=rbinom(nrow(pop), pop[,8],death) ## death is given as a rate, not a probability?
 # Eep=rbinom(nrow(pop), pop[,8], Pse[pop[,3]]) ## generates NA when Pse has negative values; error when Pse has NA
@@ -192,7 +183,6 @@ Eep=rbinom(nrow(pop), pop[,8] - Sdpd, Pse[pop[,3]])
 ## could suppress warnings (see fix above), would rather have an internally consistent probability function.
 ## Eep = rbinom(nrow(pop), pop[,8]-Sdpd, Pse[pop[,3]]) if we have death separate from birth (i.e. ditch logistic growth equation)
 
-print(paste0('time5 ', Sys.time()-state.time0))
 #exposed state changes
 Edpd=rbinom(nrow(pop), pop[,9], death) ## exposed natural death
 # Iep=rbinom(nrow(pop), pop[,9], Pei[pop[,3]]) ## exposed -> infected
@@ -233,7 +223,6 @@ Ccd=rbinom(nrow(pop),pop[,12],Pcr) ## infectious carcass removal (natural) -- de
 ## or is this really to keep track of the accounting to make sure things add up (which hasn't really worked up to this point; see above)
 Zcd=rbinom(nrow(pop),pop[,13],Pcr) ## non-infectious carcass removal (natural)
 
-print(paste0('time6 ', Sys.time()-state.time0))
 ### okay, actually I think we need to do a flat reproductive rate (or the clustered reproduction I talked about... somewhere...) and density dependent death of all individuals
 ### after (or before) everything else. Maybe not infecteds, but that way you could impose density dependent death on everyone equally instead of all this double-counting garbage.
 ### you could avoid the stupid carrying capacity thing, and have a function that saturates at whatever level you want (say, 2x the normal size for a family group)
@@ -256,7 +245,6 @@ pop[,10]=pop[,10]-Rep-Cep+Iep#-Idpd#I
 pop[,11]=pop[,11]+Rep-Rdpd #R
 pop[,12]=pop[,12]+Cep-Ccd#+Idpd #C
 pop[,13]=pop[,13]+Sdpd+Rdpd+Edpd-Zcd #Z
-print(paste0('time7 ', Sys.time()-state.time0))
 
 ###ID where there are negative numbers
 ##then, check to see if part of duplicated cell number
@@ -315,8 +303,6 @@ pop<-rbind(pop,deadguys) ## does this make duplicate rows in the pop matrix?
 #Update abundance numbers (live individuals only count in abundance)
 pop[,1]=rowSums(pop[,8:11,drop=FALSE]) ## drop=FALSE to handle single row matrix case
 # })
-# browser()
-print(paste0('time8 ', Sys.time()-state.time0))
 
 return(list(pop,Incidence,BB,"Eep"=sum(Eep),"Sdpb"=sum(Sdpb),"Sdpd"=sum(Sdpd),"Iep"=sum(Iep),"Edp"=sum(Edpd),"Rep"=sum(Rep),"Cep"=sum(Cep),"Rdpd"=sum(Rdpd),"Ccd"=sum(Ccd),"Zcd"=sum(Zcd)))
 

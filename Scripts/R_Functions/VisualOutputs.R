@@ -4,12 +4,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
         library(data.table)
 
         # Grab output data
-#         output.data <- tar_read(out.list)
         output.data <- out.list
-#         var.list <- tar_read(variables)
         var.list <- variables
         setDT(var.list)
-#         grid.data <- tar_read(land_grid_list)
         grid.data <- land_grid_list
 
         # put outputs in variables
@@ -34,27 +31,51 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
 
         # generate an image for environment quality grid
         ## only works for single grid in land_grid_list
-#         grid.key = as.data.table(grid.data[[1]][[2]])
-#         setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
-#         grid.centers = grid.key[,.(cell, ctX, ctY, rasval)]
+        grid.key = as.data.table(grid.data[[1]][[2]])
+        setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
+        grid.centers = grid.key[,.(cell, ctX, ctY, rasval)]
 
 
         ## get some plots of temporal data
         # time-based matrix outputs
         tm.pop.unq <- unique(tm.mat[,.(var, land)])
-        png('./test_outputs/tm.plots.png', width=1600, height=1000)
+        rows.plt <- round(sqrt(length(unique(tm.pop.unq[,var]))))
+        cols.plt <- ceiling(sqrt(length(unique(tm.pop.unq[,var]))))
+        png('./test_outputs/tm.plots.png', width=450*cols.plt, height=500*rows.plt)
         ## make plot dimensions dynamics based on parameter inputs
-        pdef <- par(mfrow=c(2,3), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
+        pdef <- par(mfrow=c(rows.plt, cols.plt),
+                        oma=c(8,1.2,0.2,0.2),
+                        lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfrow=c(1,1), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfcol=c(length(unique(tm.mat[,var])), length(unique(tm.mat[,land]))))
         # set plot ranges based on maximum of everything that will be on the multiplot figure
         xrng = range(tm.mat[,timestep])
         yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
         # loop over the parameter combinations for each plot panel
-        seirczbb.temporal <- function(v, l, dat=tm.mat, vlist = var.list){
+        seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = var.list){
                 vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion
+                # xlabel default
+                xlabi <- ''
+                # ylabel default
+                ylabi <- ''
+                # default plot panel margin sizes
+                bmar <- lmar <- 2
+                if (plt.i / rows.plt >= rows.plt){ # first row of panels
+                        xlabi <- 'time (weeks)'
+                        bmar <- 4
+                }
+                if (plt.i %% cols.plt == 1){ # first column of panels
+                        ylabi <- 'log(1+individuals)'
+                        lmar <- 4
+                }
+                pdef2 <- par(mar = c(bmar, lmar, 1, 1))
                 # create a blank plot
-                plot(0,0,xlim=xrng, ylim=yrng, xlab='time (weeks)', ylab='log(1+individuals)', col=NULL, main=paste('pop dynamics: vars',v,'| land',l), sub=vardat)
+#                 plot(0,0,xlim=xrng, ylim=yrng, xlab=xlabi, ylab=ylabi, col=NULL, main=paste('pop dynamics: vars',v,'| land',l), sub=vardat)
+                plot(0,0,xlim=xrng, ylim=yrng, col=NULL, ann=FALSE)
+                mtext(xlabi, 1, line=2.5, cex=1.8)
+                mtext(ylabi, 2, line=2.5, cex=1.8)
+                mtext(paste('vars',v,'| land',l), 3, line=-1.5, cex=1.7, font=2)
+                mtext(vardat, 3, line=-2.7)
                 # subset with things that have only the land tile and variable combination
                 subdat <- dat[var==v & land==l,]
                 # count up reps
@@ -68,8 +89,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
                 lapply(reps, function(r) lines(log1p(Z) ~ timestep, data=subdat[rep==r,], col='black', lty=1))
                 lapply(reps, function(r) lines(log1p(BB) ~ timestep, data=subdat[rep==r,], col='pink', lty=1))
                 lapply(reps, function(r) abline(v=subdat[rep==r,max(timestep)], col='grey'))
+                par(pdef2)
         }
-        mapply(seirczbb.temporal, v=tm.pop.unq[,var], l=tm.pop.unq[,land])
+        mapply(seirczbb.temporal, v=tm.pop.unq[,var], l=tm.pop.unq[,land], plt.i=seq(nrow(tm.pop.unq)), MoreArgs = list(rows.plt=rows.plt, cols.plt=cols.plt))
         # create a legend under the panels
         par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
         plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
@@ -83,10 +105,12 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
 
         ## plots of the spatial data
         ### spatial habitat quality
+        png('./test_outputs/landscape.png')
         rasvalmat <- as.matrix(dcast(grid.centers, ctX ~ ctY, value.var = c('rasval')))
         plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n')
         ## will need to set cex for points to have even squares based on output plot size
         points(ctY ~ ctX, data=grid.centers, col=terrain.colors(10, rev=TRUE)[grid.centers[,rasval*10]], pch=15)
+        dev.off()
 
         ### timing and extent of incidence/detections
         # connect incidence with cell locations
@@ -95,18 +119,20 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
                 input.dat <- unq.eic[var==v & land==l & max.time >= 10,]
                 if(nrow(input.dat) != 0) {
 #                 dev.new()
-                png(paste0('./test_outputs/incidence_v', v, 'l', l, '.png'), width=1000, height=1000)
+#         browser()
+                usable.reps <- unique(input.dat[,rep])
+                png(paste0('./test_outputs/incidence_v', v, 'l', l, '.png'), width=1000, height=500*length(usable.reps))
         #         if(nrow(input.dat) == 0) {browser(); input.dat <- unq.eic[var==v & land==l,]}
                         defpar <- par(mfrow=c(length(unique(input.dat[,rep])),2))
 
-                        lapply(unique(input.dat[,rep]), function(x){
+                        lapply(usable.reps, function(x){
                                 inc.cell <- input.dat[rep==x,][grid.centers, on=.(loc = cell)][!is.na(timestep),]
                                 setorder(inc.cell, timestep)
                                 inc.cell.early <- inc.cell[, .SD[1], by=.(var, land, rep, loc)]
-                                plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n', main=paste('incidence: vars',v,'| land',l))
+                                plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n', main=paste('incidence: vars',v,'| land',l), cex.lab = 1.4, xlab='x coordinate (Km)', ylab='y coordinate (Km)')
                                 points(ctY ~ ctX, data=inc.cell.early, col=rainbow(max(timestep))[timestep], pch=16,cex=0.4)
                                 points(ctY ~ ctX, data=inc.cell.early[timestep==1,], pch='X', cex=2)
-                                hist(inc.cell[,timestep], breaks=max(inc.cell[,timestep]), col=rainbow(max(inc.cell[,timestep])))
+                                hist(inc.cell[,timestep], breaks=max(inc.cell[,timestep]), col=rainbow(max(inc.cell[,timestep])), main='Timing of Incidence', ylab='# New Incidence', xlab='Time (weeks)', cex.lab = 1.4)
                         })
                         par(defpar)
                         dev.off()
@@ -120,25 +146,47 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
         unq.eic <- unique(detections[!is.na(loc) & detected != 0,.(var,land,rep,timestep,loc,max.time,code,detected)])
         mapply(function(v, l){
                 input.dat <- unq.eic[var==v & land==l & max.time >= 10,]
+                print(head(input.dat))
                 if(nrow(input.dat) != 0) {
-#                 dev.new()
-                png(paste0('./test_outputs/detection_v', v, 'l', l, '.png'), width=1000, height=1000)
-        #         if(nrow(input.dat) == 0) {browser(); input.dat <- unq.eic[var==v & land==l,]}
+                        input.dat <- aggregate(input.dat[,detected], list(rep=input.dat[,rep], timestep=input.dat[,timestep], loc=input.dat[,loc]), sum)
+                        setDT(input.dat)
+                        setnames(input.dat, 'x', 'detected')
+                        setorderv(input.dat, cols = c('rep','timestep','loc'))
+                #                 dev.new()
+                        usable.reps <- unique(input.dat[,rep])
+                        png(paste0('./test_outputs/detection_v', v, 'l', l, '.png'), width=1000, height=500*length(usable.reps))
                         defpar <- par(mfrow=c(length(unique(input.dat[,rep])),2))
 
                         lapply(unique(input.dat[,rep]), function(x){
                                 inc.cell <- input.dat[rep==x,][grid.centers, on=.(loc = cell)][!is.na(timestep),]
                                 setorder(inc.cell, timestep)
         #                         inc.cell.early <- inc.cell[, .SD[1], by=.(var, land, rep, loc)]
-                                plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n', main=paste('detections: vars',v,'| land',l))
-                                points(ctY ~ ctX, data=inc.cell, col=rainbow(max(timestep))[timestep], pch=16,cex=0.4)
+#                                 browser()
+                                plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n', main=paste('detections: vars',v,'| land',l), cex.lab = 1.4, xlab='x coordinate (Km)', ylab='y coordinate (Km)')
+                                points(ctY ~ ctX, data=inc.cell, col=rainbow(max(timestep))[timestep], pch=16,cex=1.4)
                                 points(ctY ~ ctX, data=inc.cell[timestep==min(inc.cell[,timestep]),], pch='X', cex=2)
-                                hist(inc.cell[,timestep], breaks=max(inc.cell[,timestep]), col=rainbow(max(inc.cell[,timestep])))
+                                # setup for a stacked barplot
+                                bp <- dcast(unq.eic[var==v & land==l & max.time >= 10 & rep==x,][grid.centers, on=.(loc = cell), nomatch=NULL], timestep ~ code, value.var='detected', fun.aggregate=sum)[!is.na(timestep),]
+#                                 setnames(bp, c('0','1'), c('C','IE'))
+#                                 bp[,tot := C + IE]
+                                if (v == 4 & x == 2) browser()
+                                col.raw = rainbow(max(bp[,timestep]))[bp[,timestep]]
+                                barplot(t(as.matrix(bp))[c(2,3),], space=0, xlab='timestep', col='white', ylab='detected (dark=dead)', main = x, names.arg=t(as.matrix(bp))[1,])
+                                # makes two-tone stacked barplots (https://stackoverflow.com/a/59411350)
+                                # uses darken() from 'colorspace' package; probably is a non-package way to shift color hex codes
+                                for (i in 1:ncol(t(as.matrix(bp)))){
+                                        xx = t(as.matrix(bp))[2:3,]
+                                        xx[,-i] = NA
+                                        colnames(xx)[-i] = NA
+                                        barplot(xx,col=c(darken(col.raw[i],0.4),col.raw[i]), add=T, axes=F, space=0)
+                                }
+
+#                                 plot(detected ~ timestep,data=inc.cell, main='Timing of Detections', ylab='# New Detections', xlab='Time (weeks)', cex.lab = 1.4, type='b', pch=16)
                         })
                         par(defpar)
                         dev.off()
                 }
-                },
+        },
         v=tm.pop.unq[,var],
         l=tm.pop.unq[,land]
         )

@@ -46,7 +46,8 @@ tar_option_set(packages = c("Rcpp",
 														"NLMR",
 														"EnvStats",
 														"clustermq",
-														"deSolve"),
+														"deSolve",
+														"colorspace"),
 														error = 'stop') # for troubleshooting
 
 # Pipeline ---------------------------------------------------------
@@ -196,9 +197,14 @@ list(
 #  		)
 # 	)
 	
+# 	tar_force(
 	tar_target(
       plot_outputs,
-      VisualOutputs(out.list, variables, land_grid_list))
+      VisualOutputs(out.list, variables, land_grid_list)
+#       ,force=TRUE
+    )
+
+
   )
 
   ## just to show it actually did something
