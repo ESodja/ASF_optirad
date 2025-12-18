@@ -49,7 +49,7 @@ if(length(idNEW)>0){
 # first column is where it is detected, 2nd column is distance from detected point by each other cell
 fullZONE=rbind(idZONE,idout)
 
-#get all unique grid cells in the zone		
+#get all unique grid cells in the zone
 allINzone=unique(fullZONE[,2])
 
 #get total number of grid cells in the zone	
@@ -278,7 +278,7 @@ if(pigsinzone>0){
 	}
 
 	#send updated objects to output list
-	output.list<-vector(mode="list",length=12)
+	output.list<-vector(mode="list",length=13)
 	output.list[[1]]<-POSlive_i
 	output.list[[2]]<-POSdead_i
 	output.list[[3]]<-POSlive_locs_i
@@ -291,8 +291,9 @@ if(pigsinzone>0){
 	output.list[[10]]<-ZONEkm2
 	output.list[[11]]<-removedpop
 	output.list[[12]]<-Ct
+	output.list[[13]] <- allINzone
 } else{
-	output.list<-vector(mode="list",length=12)
+	output.list<-vector(mode="list",length=13)
 	output.list[[1]]<-0
 	output.list[[2]]<-0
 	output.list[[3]]<-0
@@ -305,6 +306,7 @@ if(pigsinzone>0){
 	output.list[[10]]<-0
 	output.list[[11]]<-pop
 	output.list[[12]]<-0
+	output.list[[13]] <- allINzone
 }
 
 return(output.list)
