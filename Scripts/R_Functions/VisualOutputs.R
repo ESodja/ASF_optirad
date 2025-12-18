@@ -1,40 +1,37 @@
 
-VisualOutputs <- function(out.list, variables, land_grid_list){
+VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         # Generates output plots for examples
         library(data.table)
 
-        # Grab output data
-        output.data <- out.list
-        var.list <- variables
-        setDT(var.list)
-        grid.data <- land_grid_list
+        setDT(variables)
 
         # put outputs in variables
-        lapply(names(output.data), function(x) eval(parse(text=paste0(x, '= as.data.table(output.data["',x,'"])'))))
-        lapply(names(output.data), function(x) paste0(x, '= as.data.table(output.data["',x,'"])'))
-        lapply(output.data, function(x) print(names(x)))
+        lapply(names(out.list), function(x) eval(parse(text=paste0(x, '= as.data.table(out.list["',x,'"])'))))
+        lapply(names(out.list), function(x) paste0(x, '= as.data.table(out.list["',x,'"])'))
+        lapply(out.list, function(x) print(names(x)))
 
         # make things into data.tables and name columns for sanity
-        tm.mat= as.data.table(output.data["tm.mat"])
+        tm.mat= as.data.table(out.list["tm.mat"])
         setnames(tm.mat, unlist(lapply(strsplit(names(tm.mat), 'tm.mat.'), function(x) unlist(x)[2])))
-        summ.vals= as.data.table(output.data["summ.vals"])
+        summ.vals= as.data.table(out.list["summ.vals"])
         setnames(summ.vals, unlist(lapply(strsplit(names(summ.vals), 'summ.vals.'), function(x) unlist(x)[2])))
-        incidence= as.data.table(output.data["incidence"])
+        incidence= as.data.table(out.list["incidence"])
         setnames(incidence, unlist(lapply(strsplit(names(incidence), 'incidence.'), function(x) unlist(x)[2])))
         incidence[,max.time := max(timestep), by=.(var, rep, land)]
-        detections= as.data.table(output.data["detections"])
+        detections= as.data.table(out.list["detections"])
         setnames(detections, unlist(lapply(strsplit(names(detections), 'detections.'), function(x) unlist(x)[2])))
         if(nrow(detections) > 0) {
                 detections[,max.time := max(timestep), by=.(var, rep, land)]
                 unq.det <- unique(detections[,.(var,land,rep,timestep,loc,max.time,code,detected)])
         }
+        allzones <- as.data.table(out.list["allzone"])
+        setnames(allzones, unlist(lapply(strsplit(names(allzones), 'allzone.'), function(x) unlist(x)[2])))
 
         # generate an image for environment quality grid
         ## only works for single grid in land_grid_list
-        grid.key = as.data.table(grid.data[[1]][[2]])
+        grid.key = as.data.table(land_grid_list[[1]][[2]])
         setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
         grid.centers = grid.key[,.(cell, ctX, ctY, rasval)]
-
 
         ## get some plots of temporal data
         # time-based matrix outputs
@@ -52,7 +49,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
         xrng = range(tm.mat[,timestep])
         yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
         # loop over the parameter combinations for each plot panel
-        seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = var.list){
+        seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = variables){
                 vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion
                 # xlabel default
                 xlabi <- ''
@@ -146,7 +143,6 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
         unq.eic <- unique(detections[!is.na(loc) & detected != 0,.(var,land,rep,timestep,loc,max.time,code,detected)])
         mapply(function(v, l){
                 input.dat <- unq.eic[var==v & land==l & max.time >= 10,]
-                print(head(input.dat))
                 if(nrow(input.dat) != 0) {
                         input.dat <- aggregate(input.dat[,detected], list(rep=input.dat[,rep], timestep=input.dat[,timestep], loc=input.dat[,loc]), sum)
                         setDT(input.dat)
@@ -169,7 +165,6 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
                                 bp <- dcast(unq.eic[var==v & land==l & max.time >= 10 & rep==x,][grid.centers, on=.(loc = cell), nomatch=NULL], timestep ~ code, value.var='detected', fun.aggregate=sum)[!is.na(timestep),]
 #                                 setnames(bp, c('0','1'), c('C','IE'))
 #                                 bp[,tot := C + IE]
-                                if (v == 4 & x == 2) browser()
                                 col.raw = rainbow(max(bp[,timestep]))[bp[,timestep]]
                                 barplot(t(as.matrix(bp))[c(2,3),], space=0, xlab='timestep', col='white', ylab='detected (dark=dead)', main = x, names.arg=t(as.matrix(bp))[1,])
                                 # makes two-tone stacked barplots (https://stackoverflow.com/a/59411350)
@@ -191,4 +186,39 @@ VisualOutputs <- function(out.list, variables, land_grid_list){
         l=tm.pop.unq[,land]
         )
 
+        radius = parameters['Rad']
+        unq.combos <- unique(unq.eic[,.(var, land, rep)])
+        if (radius != 0){
+                ## plotting incidence with zone of control over time for a bunch of plots
+                # detection locations
+                unq.incidence <- unique(incidence[,.(var,land,rep,timestep,loc,max.time)])
+                unq.detections <- unique(detections[,.(var,land,rep,timestep,loc,max.time,detected)])
+                mapply(function(i, j, k){
+                        sub.incidence <- unique(unq.incidence[var==i & land == j & rep == k & loc != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
+                        sub.detections <- unique(unq.detections[var==i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
+                        sub.zones <- allzones[var==i & land == j & rep == k & loc != 0,][grid.centers, on=.(loc=cell), nomatch=NULL]
+                        paneldim <- ceiling(sqrt(max(sub.incidence[,timestep])))
+                        png(paste0('./test_outputs/sptmplot_', i, j, k,'.png'), width=2000, height=2000)
+                        par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
+                        lapply(seq(max(sub.incidence[,timestep])), function(x){
+                                plot(ctY ~ ctX, data=sub.zones[timestep == x,], pch='.', col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80))
+                                points(ctY ~ ctX, data=sub.incidence[timestep == x,], pch=3, col='red')
+                                if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
+                        })
+                        dev.off()
+
+                        library(animation)
+                        plot.step <- function(x){
+                                plot(ctY ~ ctX, data=sub.zones[timestep == x,], pch=3, col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80), main=paste('week', x))
+                                points(ctY ~ ctX, data=sub.incidence[timestep == x,], pch=3, col='red')
+                                if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep == x,], pch=2, col='blue')
+                        }
+                        out.gif <- paste0('testgif',i,j,k,'.gif')
+                        saveGIF({
+                                lapply(seq(max(sub.incidence[,timestep])), function(i) {plot.step(i); ani.pause(0.1)})
+                        }, movie.name = out.gif, ani.width=600, ani.height=600)
+                }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
+
+
+        }
 }

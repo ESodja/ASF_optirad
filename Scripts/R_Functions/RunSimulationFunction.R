@@ -100,6 +100,11 @@ for(v in 1:nrow(variables)){
 				n.det = nrow(detections.r)
 				detections.r = cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)
 				colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
+
+				tmstep <- unlist(lapply(seq(out.list$allzonecells), function(x) rep(x, length(out.list$allzonecells[[x]]))))
+				cells <- unlist(lapply(seq(out.list$allzonecells), function(x) out.list$allzonecells[[x]]))
+				allzone.r <- cbind(matrix(id.r, ncol=3, nrow=length(tmstep), byrow=TRUE), data.table(tmstep, cells))
+				colnames(allzone.r) <- c('var','land','rep','timestep','loc')
 			}
 
 
@@ -138,8 +143,18 @@ for(v in 1:nrow(variables)){
 # 				BB=BB.r
 # 				idzone = idzone.r ## not done yet
 				summ.vals = summ.vals.r
+				print(allzone)
 				if ("incidence" %in% out.opts) incidence = incidence.r
-				if (end.tm > detectday & "alldetections" %in% out.opts) detections = detections.r
+				if (end.tm > detectday & "alldetections" %in% out.opts) {
+					detections = detections.r
+					print(dim(allzone))
+print(head(allzone))
+print(dim(allzone.r))
+print(head(allzone.r))
+
+					allzone = allzone.r
+					colnames(allzone) <- c('var','land','rep','timestep','loc')
+				}
 
 			} else {
 				tm.mat = rbind(tm.mat, tm.mat.r)
@@ -149,13 +164,23 @@ for(v in 1:nrow(variables)){
 # 				idzone = rbind(idzone, idzone.r) ## not done yet
 				summ.vals = rbind(summ.vals, summ.vals.r)
 				if ("incidence" %in% out.opts) incidence = rbind(incidence, incidence.r)
-				if (end.tm > detectday & "alldetections" %in% out.opts) detections = rbind(detections, detections.r)
+				if (end.tm > detectday & "alldetections" %in% out.opts) {
+# 					if (nrow(detections.r) == 1 | nrow(detections) == 1) {print('here');browser()}
+					detections = rbind(detections, detections.r)
+# 					if (nrow(allzone.r) == 1 | nrow(allzone) == 1) {print('here');browser()}
+					colnames(allzone) <- c('var','land','rep','timestep','loc')
+print(dim(allzone))
+print(head(allzone))
+print(dim(allzone.r))
+print(head(allzone.r))
+					allzone = rbind(allzone, allzone.r)
+				}
 			}
 		}
 	}
 }
 
-return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections))
+return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone))
 # return(list("solocs"=solocs,"Cto"=Cto))
 }
 

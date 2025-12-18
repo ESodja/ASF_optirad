@@ -11,6 +11,7 @@ GetOutputs<-function(pop,centroids,BB,Incidence,Tculled,ICtrue,out,detectday,Ct,
 	#TincFromDD #sum of all exposures starting day after detection day
 	#TincToDD #sum of all exposures up until detection day
 	#DET #total number of detections
+	#allzone # all cells in monitoring zone
 
 #to add:
   #toggle option: locs, dataframe of x/y locs for each sounder at each timestep, with SEIRCZ status
@@ -122,6 +123,7 @@ if("alldetections"%in%out.opts){
   POSlive_locs=input.opts$POSlive_locs
   POSdead=input.opts$POSdead
   POSdead_locs=input.opts$POSdead_locs
+  allzone = input.opts$allzonecells
 
   detections=matrix(nrow=0,ncol=4)
   
@@ -198,6 +200,12 @@ if("alldetections"%in%out.opts){
   templist[[1]]=detections
   list.all=append(list.all,templist)
   names(list.all)[length(list.all)]="alldetections"
+  ## caveman-style addition of allzone cells
+  templist=vector(mode="list",length=1)
+  templist[[1]]=input.opts$allzonecells
+  list.all=append(list.all,templist)
+  names(list.all)[length(list.all)]="allzonecells"
+
 }
 
 if("incidence"%in%out.opts){

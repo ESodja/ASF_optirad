@@ -1,4 +1,4 @@
-FirstDetect<-function(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs){
+FirstDetect<-function(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs, allzone){
 #randomly detects a single infected pig (carcass or live)
 	#Randomly detect an E,I, or C pig
 	detection<-as.integer(sample(as.character(which(pop[,9]>0|pop[,10]>0|pop[,12]>0)),1))
@@ -46,6 +46,6 @@ FirstDetect<-function(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs){
   	pop<-pop[-detection,]
   	}
 
-  return(list(pop,POSlive,POSdead,POSlive_locs,POSdead_locs))
+  return(list(pop,POSlive,POSdead,POSlive_locs,POSdead_locs, allzone))
   
 }

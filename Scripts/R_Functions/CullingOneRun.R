@@ -49,7 +49,7 @@ if(length(idNEW)>0){
 # first column is where it is detected, 2nd column is distance from detected point by each other cell
 fullZONE=rbind(idZONE,idout)
 
-#get all unique grid cells in the zone		
+#get all unique grid cells in the zone
 allINzone=unique(fullZONE[,2])
 
 #get total number of grid cells in the zone	
@@ -135,15 +135,26 @@ if(pigsinzone>0){
 # 	fullZONEpigs<-fullZONEpigs[complete.cases(fullZONEpigs),,drop=FALSE] ## probably don't need this unless bugs are making NA's somewhere
 
 	#%density of all live and dead pigs in the zone
-	Dr=pigsinzone/ZONEkm2
+# 	Dr=pigsinzone/ZONEkm2
+# 	print(paste('Dr', Dr))
 	#determine density-dependent capture probability in this radius
-	cprob=1-(1/(1+alphaC)^Dr)
+# 	cprob=1-(1/(1+alphaC)^Dr) ## this is stupid
+	norm.val <- TwoDt(0, 3, Rad/2)
+	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+
 	#get total number culled/removed/sampled in the zone
-	numb=rbinom(pigsinzone,1,cprob*Intensity)
+# 	numb=rbinom(pigsinzone,1,cprob*Intensity) ## this is stupid
+	## there is an issue here -- as the densisty of pigs in the zone goes down, the number of pigs you will cull also goes down, which makes sense. BUT because the area is expanding as you initially find more, the density is also decreasing. Eventually you've killed all the pigs that are infected within your zone more or less, but you also have live ones moving in. Eventually you start killing uninfected pigs moving in to the region near your detection points, while not getting any more detections because when you start nearest the detection and work outwards you end up with a limited number of target culled individuals because the area is so big and the population is so small, and the disease becomes so rare in that area that you stop detecting any more. maybe.
+	## I would say it would make more sense to base the probability of detection off of distance from previous detection points, because the lowered density (between pop decline and area increase) reduces the number of individuals you are culling faster than the number of individuals are declining. Instead, have each sounder's distance from previous detection and, possibly, the size of the sounder, indicate its probability of detection and if that happens, it gets culled.
+	## Even if you just randomly ran around in the zone and detected sounders independent of their exact distance from detection, you could have a better result because you would prbably still have positive detections at least occasionally...
+	## applying the probability to the density of everything in the radius is kindof... silly...
+	## I think the units are kindof screwey, like why does alphaC or intensity fit in the way that they do?
+
 
 	#get cumulative sum of targeted pigs
 	#cpigs = cumsum(tpigs);
-	cpigs=sum(numb)
+# 	cpigs=sum(numb)
+# 	print(paste('num culled', cpigs))
 
 	#determine how far down the list to remove pigs from cells
 	# removals=0 #total number of removals, go through loop until first time it is equal to or greater than cpigs
@@ -155,18 +166,31 @@ if(pigsinzone>0){
 	# 		removals<-removals+fullZONEpigs[incr,4]
 	# 		incr=incr+1
 	# 	}
-	if (cpigs > 0 & nrow(fullZONEpigs) > 0){
-		cull.index <- c(1L, which(cumsum(fullZONEpigs[,4]) < cpigs) + 1L) ## go to the next row b/c that's when they would stop
+	fullZONEpigs <- cbind(fullZONEpigs, cull.cell = rbinom(fullZONEpigs[,'prob.cull'], 1, fullZONEpigs[,'prob.cull']))
+	## Problem: No randomness in selection and bias toward higher? index numbers drifts detection to the south (or north, however plotted)
+	if (sum(fullZONEpigs[,'cull.cell']) > 0 & nrow(fullZONEpigs) > 0){
 		## use < instead of <= so if they hit cpigs exactly, they will stop there
-		cull.index <- cull.index[seq(min(length(cull.index), nrow(fullZONEpigs)))] ## handles cases with more culling than pigs
-		culled <- sum(fullZONEpigs[cull.index,4])
+# 		cull.index <- c(1L, which(cumsum(fullZONEpigs[,4]) < cpigs) + 1L) ## go to the next row b/c that's when they would stop
+# 		cull.index <- cull.index[seq(min(length(cull.index), nrow(fullZONEpigs)))] ## handles cases with more culling than pigs
+		## randomizes which points are selected, not just the n closest/furthest ones with arbitrary ordering (i.e. sorted by cell id number) within the same distance group, which potentially caused bias in culling
+		## also with more individuals in that distance than what would normally be culled, allows for missing some sounders which seems more realistic in some ways...
+# 		cull.distance <- max(fullZONEpigs[cull.index,3])
+# 		print(paste('cull dist', cull.distance))
+# 		browser()
+# 		if (cullstyle == "startIN") {
+# 			cull.index2 <- c(1L, which(fullZONEpigs[,3] <= cull.distance) + 1L)
+# 		} else {
+# 			cull.index2 <- c(1L, which(fullZONEpigs[,3] >= cull.distance) + 1L)
+# 		}
+# 		culled <- sum(fullZONEpigs[cull.index2,4])
+		culled <- sum(fullZONEpigs[fullZONEpigs[,'cull.cell'] == 1,'Nlive'])
 	#determine which pigs culled
 	# 	culled=removals[[1]] ## ??? shouldn't be a list...
 	#% list of cells that pigs will be eliminated from (column index was 1 in old version)
 
-		removalcells<-fullZONEpigs[cull.index,1]
+		removalcells<-fullZONEpigs[fullZONEpigs[,'cull.cell'] == 1,1]
 	#get which pigs culled
-		removalpigs<-fullZONEpigs[cull.index,,drop=FALSE]
+		removalpigs<-fullZONEpigs[fullZONEpigs[,'cull.cell']== 1,,drop=FALSE]
 
 	######################################
 	###### Update surveillance data ######
@@ -254,7 +278,7 @@ if(pigsinzone>0){
 	}
 
 	#send updated objects to output list
-	output.list<-vector(mode="list",length=12)
+	output.list<-vector(mode="list",length=13)
 	output.list[[1]]<-POSlive_i
 	output.list[[2]]<-POSdead_i
 	output.list[[3]]<-POSlive_locs_i
@@ -267,8 +291,9 @@ if(pigsinzone>0){
 	output.list[[10]]<-ZONEkm2
 	output.list[[11]]<-removedpop
 	output.list[[12]]<-Ct
+	output.list[[13]] <- allINzone
 } else{
-	output.list<-vector(mode="list",length=12)
+	output.list<-vector(mode="list",length=13)
 	output.list[[1]]<-0
 	output.list[[2]]<-0
 	output.list[[3]]<-0
@@ -281,6 +306,7 @@ if(pigsinzone>0){
 	output.list[[10]]<-0
 	output.list[[11]]<-pop
 	output.list[[12]]<-0
+	output.list[[13]] <- allINzone
 }
 
 return(output.list)

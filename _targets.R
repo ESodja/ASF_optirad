@@ -43,11 +43,12 @@ tar_option_set(packages = c("Rcpp",
                             "sf",
                             "raster",
                             "terra",
-														"NLMR",
+														"NLMR", ## NLMR barely still works, recommend using something else (CRAN friendly) for package dev.
 														"EnvStats",
 														"clustermq",
 														"deSolve",
-														"colorspace"),
+														"colorspace",
+														"data.table"),
 														error = 'stop') # for troubleshooting
 
 # Pipeline ---------------------------------------------------------
@@ -185,6 +186,8 @@ list(
   		)
 #   		,force=TRUE
   	),
+  	## source('./Scripts/R_functions/RunSimulationFunction.R')
+  	## RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)
 	
 	## Run MF Model ---------------
 	#tar_target(
@@ -200,7 +203,7 @@ list(
 # 	tar_force(
 	tar_target(
       plot_outputs,
-      VisualOutputs(out.list, variables, land_grid_list)
+      VisualOutputs(out.list, variables, land_grid_list, parameters00)
 #       ,force=TRUE
     )
 
