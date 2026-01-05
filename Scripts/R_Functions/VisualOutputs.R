@@ -120,7 +120,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                 usable.reps <- unique(input.dat[,rep])
                 png(paste0('./test_outputs/incidence_v', v, 'l', l, '.png'), width=1000, height=500*length(usable.reps))
         #         if(nrow(input.dat) == 0) {browser(); input.dat <- unq.eic[var==v & land==l,]}
-                        defpar <- par(mfrow=c(length(unique(input.dat[,rep])),2))
+                        defpar <- par(mfrow=c(length(unique(input.dat[,rep])),2), oma=c(8,1.2,0.2,0.2))
 
                         lapply(usable.reps, function(x){
                                 inc.cell <- input.dat[rep==x,][grid.centers, on=.(loc = cell)][!is.na(timestep),]
@@ -130,7 +130,18 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                                 points(ctY ~ ctX, data=inc.cell.early, col=rainbow(max(timestep))[timestep], pch=16,cex=0.4)
                                 points(ctY ~ ctX, data=inc.cell.early[timestep==1,], pch='X', cex=2)
                                 hist(inc.cell[,timestep], breaks=max(inc.cell[,timestep]), col=rainbow(max(inc.cell[,timestep])), main='Timing of Incidence', ylab='# New Incidence', xlab='Time (weeks)', cex.lab = 1.4)
+                                # Add line to indicate when first detection began
+                                abline(v=parameters['detectday'], lwd=3, lty=2, col='black')
                         })
+                        # add legend
+                        # create a legend under the panels
+                        par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
+                        plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+                        legend("bottom", legend=c('Intro point','First detect'),#'rep1','rep2'),
+                                lty=c(NA, 2),
+                                col=c('black','black'),#'grey','grey'),
+                                pch=c('X',NA)
+                                horiz=TRUE, bty='n', cex=2.3, lwd=3)
                         par(defpar)
                         dev.off()
                 }
@@ -168,6 +179,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                                 col.raw = rainbow(max(bp[,timestep]))[bp[,timestep]]
                                 if (nrow(as.matrix(bp)) > 1){
                                         barplot(t(as.matrix(bp))[c(2,3),], space=0, xlab='timestep', col='white', ylab='detected (dark=dead)', main = x, names.arg=t(as.matrix(bp))[1,])
+                                        # dark portion of bars indicates how many detected were found dead vs. culled
                                         # makes two-tone stacked barplots (https://stackoverflow.com/a/59411350)
                                         # uses darken() from 'colorspace' package; probably is a non-package way to shift color hex codes
                                         for (i in 1:ncol(t(as.matrix(bp)))){
