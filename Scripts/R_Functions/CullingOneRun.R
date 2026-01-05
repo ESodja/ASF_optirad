@@ -140,7 +140,8 @@ if(pigsinzone>0){
 	#determine density-dependent capture probability in this radius
 # 	cprob=1-(1/(1+alphaC)^Dr) ## this is stupid
 	norm.val <- TwoDt(0, 3, Rad/2)
-	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = 0.25*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+# 	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = Intensity*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
 
 	#get total number culled/removed/sampled in the zone
 # 	numb=rbinom(pigsinzone,1,cprob*Intensity) ## this is stupid

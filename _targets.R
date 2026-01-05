@@ -186,8 +186,7 @@ list(
   		)
 #   		,force=TRUE
   	),
-  	## source('./Scripts/R_functions/RunSimulationFunction.R')
-  	## RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)
+  	## {source('./Scripts/R_functions/RunSimulationFunction.R') ; RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep) }
 	
 	## Run MF Model ---------------
 	#tar_target(
@@ -206,6 +205,7 @@ list(
       VisualOutputs(out.list, variables, land_grid_list, parameters00)
 #       ,force=TRUE
     )
+  	## {source('./Scripts/R_functions/VisualOutputs.R') ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters00)) }
 
 
   )

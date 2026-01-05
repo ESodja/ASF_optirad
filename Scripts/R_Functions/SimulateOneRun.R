@@ -168,13 +168,13 @@ if(sample == 1){ ## I think this is supposed to be the 'sample' parameter?
 if(sample != 1 & i == detectday & sum(pop[,c(9,10,12)]) > 0 & Rad > 0){
 # if(sampling != 1 & i==detectday&sum(pop[,c(9,10,12)])>0&Rad>0){
 
-  fd.list<-FirstDetect(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs, allzonei)
+  fd.list<-FirstDetect(pop,i,POSlive,POSdead,POSlive_locs,POSdead_locs)
   pop=fd.list[[1]]
   POSlive=fd.list[[2]]
   POSdead=fd.list[[3]]
   POSlive_locs=fd.list[[4]]
   POSdead_locs=fd.list[[5]]
-  allzonei <- fd.list[[6]]
+  allzone[[i]] <- fd.list[[6]]
 }
 
 
@@ -219,8 +219,7 @@ if(sample != 1 & i > detectday & Rad > 0) {
 	ZONEkm2[i,] <- output.list[[10]]
 	pop <- output.list[[11]]
 	Ct[i,1] <- output.list[[12]]
-# 	browser()
-	allzonei[[i]] <- output.list[[13]]
+	allzone[[i]] <- output.list[[13]]
 	#Total number culled at each timestep
 	Tculled[i] <- culled
 
@@ -317,7 +316,7 @@ if("alldetections"%in%out.opts){
   templist = list(POSdead_locs)
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "POSdead_locs"
-  templist = list(allzonei)
+  templist = list(allzone)
   input.opts = append(input.opts, templist)
   names(input.opts)[length(input.opts)] = "allzonecells"
 

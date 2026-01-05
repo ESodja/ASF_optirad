@@ -140,7 +140,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         )
 
         # connect detections with cell locations
-        unq.eic <- unique(detections[!is.na(loc) & detected != 0,.(var,land,rep,timestep,loc,max.time,code,detected)])
+        unq.eic <- unique(detections[!is.na(loc) & detected != 0 & max.time >= 10,.(var,land,rep,timestep,loc,max.time,code,detected)])
         mapply(function(v, l){
                 input.dat <- unq.eic[var==v & land==l & max.time >= 10,]
                 if(nrow(input.dat) != 0) {
@@ -166,14 +166,16 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 #                                 setnames(bp, c('0','1'), c('C','IE'))
 #                                 bp[,tot := C + IE]
                                 col.raw = rainbow(max(bp[,timestep]))[bp[,timestep]]
-                                barplot(t(as.matrix(bp))[c(2,3),], space=0, xlab='timestep', col='white', ylab='detected (dark=dead)', main = x, names.arg=t(as.matrix(bp))[1,])
-                                # makes two-tone stacked barplots (https://stackoverflow.com/a/59411350)
-                                # uses darken() from 'colorspace' package; probably is a non-package way to shift color hex codes
-                                for (i in 1:ncol(t(as.matrix(bp)))){
-                                        xx = t(as.matrix(bp))[2:3,]
-                                        xx[,-i] = NA
-                                        colnames(xx)[-i] = NA
-                                        barplot(xx,col=c(darken(col.raw[i],0.4),col.raw[i]), add=T, axes=F, space=0)
+                                if (nrow(as.matrix(bp)) > 1){
+                                        barplot(t(as.matrix(bp))[c(2,3),], space=0, xlab='timestep', col='white', ylab='detected (dark=dead)', main = x, names.arg=t(as.matrix(bp))[1,])
+                                        # makes two-tone stacked barplots (https://stackoverflow.com/a/59411350)
+                                        # uses darken() from 'colorspace' package; probably is a non-package way to shift color hex codes
+                                        for (i in 1:ncol(t(as.matrix(bp)))){
+                                                xx = t(as.matrix(bp))[2:3,]
+                                                xx[,-i] = NA
+                                                colnames(xx)[-i] = NA
+                                                barplot(xx,col=c(darken(col.raw[i],0.4),col.raw[i]), add=T, axes=F, space=0)
+                                        }
                                 }
 
 #                                 plot(detected ~ timestep,data=inc.cell, main='Timing of Detections', ylab='# New Detections', xlab='Time (weeks)', cex.lab = 1.4, type='b', pch=16)
@@ -187,7 +189,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         )
 
         radius = parameters['Rad']
-        unq.combos <- unique(unq.eic[,.(var, land, rep)])
+        unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
         if (radius != 0){
                 ## plotting incidence with zone of control over time for a bunch of plots
                 # detection locations
@@ -201,8 +203,8 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                         png(paste0('./test_outputs/sptmplot_', i, j, k,'.png'), width=2000, height=2000)
                         par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
                         lapply(seq(max(sub.incidence[,timestep])), function(x){
-                                plot(ctY ~ ctX, data=sub.zones[timestep == x,], pch='.', col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80))
-                                points(ctY ~ ctX, data=sub.incidence[timestep == x,], pch=3, col='red')
+                                plot(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80))
+                                points(ctY ~ ctX, data=sub.incidence[timestep <= x,], pch=3, col='red')
                                 if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
                         })
                         dev.off()

@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 10
+~ thyme = 52
 
 ############################
 #### Movement parameters ###
@@ -50,7 +50,7 @@ rate = 0.3550
   1=abundance-avoidance movement preference
   2=rsf preference (only works when pop_init_grid_opts="heterogeneous" and grid_opts!="homogeneous")
   
-~ mv_pref = 0
+~ mv_pref = 2
 
 ###########################
 #### Contact parameters ###
@@ -122,11 +122,11 @@ These two parameters only need to be set if manually creating heterogeneous or h
 * pop_init_grid_opts = how to initialize sounders on the grid-- do it with biased preference according to lscape vals or just randomly
 
 
-~ grid.opts = "homogeneous"
-grid.opts = "heterogeneous"
+grid.opts = "homogeneous"
+~ grid.opts = "heterogeneous"
 grid.opts = "ras"
-~ pop_init_grid_opts = "homogeneous"
-pop_init_grid_opts = "heterogeneous"
+pop_init_grid_opts = "homogeneous"
+~ pop_init_grid_opts = "heterogeneous"
 
   
 #################################
@@ -134,7 +134,7 @@ pop_init_grid_opts = "heterogeneous"
 #################################
 * detectday, Timestep of simulation to start surveillance. Yes it's named 'detectday' even though timesteps are in weeks.
 
-~ detectday = 21
+~ detectday = 20
   
 * DetP, probability of infected pigs sampled as positive. for now, is just used as an input in some of the sounderlocs output processing steps. later, may be integrated into culling/surveillance process within simulation.
 
@@ -155,10 +155,10 @@ pop_init_grid_opts = "heterogeneous"
 * Intensity = 0.05, proportion of population targeted for removal per day based on capabilities
 
 ~ alphaC = 1.1
- Rad = 20
-~ Rad = c(10,20)
-cullstyle = "startIN"
-~ cullstyle = "startOUT"
+~ Rad = 5
+Rad = c(10,20)
+~ cullstyle = "startIN"
+cullstyle = "startOUT"
 ~ Intensity = 0.05
 
 #####################################
@@ -215,22 +215,26 @@ density, or ss because these are associated (thus they should be the same length
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
-~ state = c("SC")
+~ state = c("FL")
 state = c("FL","SC")
 ~ shape_FL = 0.7515
 ~ rate_FL = 0.3550
-~ B1_FL = c(0.9, 0.4, 0.2)
+~ B1_FL = c(0.9, 0.2)
+B1_FL = c(0.9, 0.4, 0.2)
 
 ~ shape_SC = 0.5657
 ~ rate_SC = 1.9082
 B1_SC = c(0.004)
-~ B1_SC = c(0.009, 0.004, 0.002)
+~ B1_SC = c(0.009, 0.002)
+B1_SC = c(0.009, 0.004, 0.002)
 
 ~ B2_B1_factor = 0.5
 density = c(1.5)
-~ density = c(1.5, 3, 5)
+~ density = c(1.5, 5)
+density = c(1.5, 3, 5)
 ss = c(2)
-~ ss = c(2, 4, 6)
+~ ss = c(2, 6)
+ss = c(2, 4, 6)
 
 
 

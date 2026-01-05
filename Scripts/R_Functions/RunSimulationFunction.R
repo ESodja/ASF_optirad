@@ -116,12 +116,6 @@ for(v in 1:nrow(variables)){
 				colnames(incidence.r) <- c('var','land','rep','timestep','state','loc')
 			}
 
-			# idzone -- not sure what it looks like yet
-			# columms "cell" and "timestep"
-# 			if ('idzone' %in% out.opts){
-				# do idzone things, probably
-# 			}
-
 			# single value per vlr combination outputs
 			# Tinc
 			# sumTculled
@@ -138,10 +132,6 @@ for(v in 1:nrow(variables)){
 			# Put new results in output objects OR add new results to existing output objects
 			if(r==1&l==1&v==1){
 				tm.mat = tm.mat.r
-# 				solocs=solocs.r
-# 				Cto=Ct.r
-# 				BB=BB.r
-# 				idzone = idzone.r ## not done yet
 				summ.vals = summ.vals.r
 				print(allzone)
 				if ("incidence" %in% out.opts) incidence = incidence.r
@@ -158,21 +148,11 @@ print(head(allzone.r))
 
 			} else {
 				tm.mat = rbind(tm.mat, tm.mat.r)
-# 				solocs = rbind(solocs, solocs.r)
-# 				Cto = rbind(Cto, Ct.r)
-# 				BB = rbind(BB, BB.r)
-# 				idzone = rbind(idzone, idzone.r) ## not done yet
 				summ.vals = rbind(summ.vals, summ.vals.r)
 				if ("incidence" %in% out.opts) incidence = rbind(incidence, incidence.r)
 				if (end.tm > detectday & "alldetections" %in% out.opts) {
-# 					if (nrow(detections.r) == 1 | nrow(detections) == 1) {print('here');browser()}
 					detections = rbind(detections, detections.r)
-# 					if (nrow(allzone.r) == 1 | nrow(allzone) == 1) {print('here');browser()}
 					colnames(allzone) <- c('var','land','rep','timestep','loc')
-print(dim(allzone))
-print(head(allzone))
-print(dim(allzone.r))
-print(head(allzone.r))
 					allzone = rbind(allzone, allzone.r)
 				}
 			}
