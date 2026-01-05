@@ -129,6 +129,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                                 plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n', main=paste('incidence: vars',v,'| land',l), cex.lab = 1.4, xlab='x coordinate (Km)', ylab='y coordinate (Km)')
                                 points(ctY ~ ctX, data=inc.cell.early, col=rainbow(max(timestep))[timestep], pch=16,cex=0.4)
                                 points(ctY ~ ctX, data=inc.cell.early[timestep==1,], pch='X', cex=2)
+#                                 browser()
                                 hist(inc.cell[,timestep], breaks=max(inc.cell[,timestep]), col=rainbow(max(inc.cell[,timestep])), main='Timing of Incidence', ylab='# New Incidence', xlab='Time (weeks)', cex.lab = 1.4)
                                 # Add line to indicate when first detection began
                                 abline(v=parameters['detectday'], lwd=3, lty=2, col='black')
@@ -140,7 +141,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                         legend("bottom", legend=c('Intro point','First detect'),#'rep1','rep2'),
                                 lty=c(NA, 2),
                                 col=c('black','black'),#'grey','grey'),
-                                pch=c('X',NA)
+                                pch=c('X',NA),
                                 horiz=TRUE, bty='n', cex=2.3, lwd=3)
                         par(defpar)
                         dev.off()
@@ -205,18 +206,41 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         if (radius != 0){
                 ## plotting incidence with zone of control over time for a bunch of plots
                 # detection locations
-                unq.incidence <- unique(incidence[,.(var,land,rep,timestep,loc,max.time)])
                 unq.detections <- unique(detections[,.(var,land,rep,timestep,loc,max.time,detected)])
+
+                unq.incidence <- unique(incidence[,.(var,land,rep,timestep,loc,max.time)])
+                unq.incidence[,is.inf := 1]
+                unq.incidence[,loc.min := min(timestep), by=.(var, land, rep, loc)]
+                unq.incidence[,loc.max := max(timestep), by=.(var, land, rep, loc)]
+                unq.join <- CJ(timestep=seq(parameters[['thyme']]),
+                                 var=unique(unq.incidence[,var]),
+                                 land=unique(unq.incidence[,land]),
+                                 rep=unique(unq.incidence[,rep]),
+                                 loc=unique(unq.incidence[,loc]))
+                unq.join <- unq.join[!unq.incidence, on=.(var, land, rep, timestep, loc)]
+                unq.join[, is.inf := 0]
+                unq.join <- unq.join[unique(unq.incidence[,.(var, land, rep, loc, loc.min, loc.max, max.time)]), on=.(var, land, rep, loc)]
+                unq.join <- unq.join[timestep >= loc.min,]
+#                 unq.join <- unq.join[timestep <= loc.max & timestep >= loc.min,]
+                unq.incidence <- rbind(unq.incidence, unq.join)
+
+                unq.incidence[,loc.min := NULL]
+                unq.incidence[,loc.max := NULL]
+                setorder(unq.incidence, var, land, rep, timestep, loc)
+
+                browser()
+
                 mapply(function(i, j, k){
-                        sub.incidence <- unique(unq.incidence[var==i & land == j & rep == k & loc != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
+                        sub.incidence <- unique(unq.incidence[var==i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
                         sub.detections <- unique(unq.detections[var==i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
                         sub.zones <- allzones[var==i & land == j & rep == k & loc != 0,][grid.centers, on=.(loc=cell), nomatch=NULL]
                         paneldim <- ceiling(sqrt(max(sub.incidence[,timestep])))
                         png(paste0('./test_outputs/sptmplot_', i, j, k,'.png'), width=2000, height=2000)
                         par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
                         lapply(seq(max(sub.incidence[,timestep])), function(x){
-                                plot(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80))
-                                points(ctY ~ ctX, data=sub.incidence[timestep <= x,], pch=3, col='red')
+                                plot(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='darkred', xlim=c(0,80), ylim=c(0,80))
+                                points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 1,], pch=3, col='red')
+                                points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow', cex=1.2)
                                 if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
                         })
                         dev.off()
@@ -224,12 +248,13 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                         library(animation)
                         plot.step <- function(x){
                                 plot(ctY ~ ctX, data=sub.zones[timestep == x,], pch=3, col='yellow', cex=1.2, xlim=c(0,80), ylim=c(0,80), main=paste('week', x))
-                                points(ctY ~ ctX, data=sub.incidence[timestep == x,], pch=3, col='red')
+                                points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 0,], pch='.', col='darkred')
+                                points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
                                 if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep == x,], pch=2, col='blue')
                         }
                         out.gif <- paste0('testgif',i,j,k,'.gif')
                         saveGIF({
-                                lapply(seq(max(sub.incidence[,timestep])), function(i) {plot.step(i); ani.pause(0.1)})
+                                lapply(seq(max(sub.incidence[,timestep])), function(i) {plot.step(i); ani.pause(0.05)})
                         }, movie.name = out.gif, ani.width=600, ani.height=600)
                 }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 
