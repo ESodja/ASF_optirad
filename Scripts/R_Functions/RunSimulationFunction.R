@@ -18,8 +18,6 @@
       #a nested list of grid parameters
 RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_functions, reps){
 
-print('runsimreps')
-# options(warn=2)
 	## Filters variables (parameters with >1 value) out of parameters
 	## selecting variables is done in SetVarParms.R
 	parameters <- parameters[names(parameters) %in% names(variables) == FALSE]
@@ -30,7 +28,6 @@ print('runsimreps')
 	#1, loop through all landscapes
 	#2, loop through all parameter settings
 for(v in 1:nrow(variables)){
-	print(paste0("variable ",v))
 	vars=variables[v,]
 # 	names(vars)[3]="dens"
 	names(vars)[names(vars) == "density"]="dens" ## more robust, especially as variables defined as parameters with multiple values
@@ -44,7 +41,6 @@ for(v in 1:nrow(variables)){
 
 	#loop through landscapes
 	for(l in 1:length(land_grid_list)){
-		print(paste0("landscape: ",l))
 		centroids=land_grid_list[[l]]$centroids
 		grid=land_grid_list[[l]]$grid
 
@@ -53,9 +49,8 @@ for(v in 1:nrow(variables)){
 		pop=InitializeInfection(pop,centroids,grid,parameters)
 
 		for(r in 1:reps){
-			print(r)
 			#Do simulations
-			out.list=SimulateOneRun(outputs,pop,centroids,grid,parameters,cpp_functions,K)
+			out.list=SimulateOneRun(outputs,pop,centroids,grid,parameters,cpp_functions,K, v, l, r)
 			#Handle outputs
 
 			## test these outputs if out.opts doesn't include them
@@ -81,7 +76,6 @@ for(v in 1:nrow(variables)){
 
 			#Handle sounderlocs (optional...)
 			## seems like other things were supposed to happen in sounderlocsSummarize, if we want to use those this will have to change
-# 			browser()
 			if ("sounderlocs" %in% out.opts){
 				solocs.r=sounderlocsSummarize(out.list$sounderlocs,r)[[1]]
 	# 			solocs.r=solocs.r$SEIRCZ_total
@@ -101,9 +95,10 @@ for(v in 1:nrow(variables)){
 				detections.r = cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)
 				colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
 
-				tmstep <- unlist(lapply(seq(out.list$allzonecells), function(x) rep(x, length(out.list$allzonecells[[x]]))))
-				cells <- unlist(lapply(seq(out.list$allzonecells), function(x) out.list$allzonecells[[x]]))
-				allzone.r <- cbind(matrix(id.r, ncol=3, nrow=length(tmstep), byrow=TRUE), data.table(tmstep, cells))
+# 				tmstep <- unlist(lapply(seq(nrow(out.list$allzonecells)), function(x) rep(x, length(out.list$allzonecells[[x]]))))
+# 				cells <- unlist(lapply(seq(out.list$allzonecells), function(x) out.list$allzonecells[[x]]))
+# 				allzone.r <- cbind(matrix(id.r, ncol=3, nrow=length(tmstep), byrow=TRUE), data.table(tmstep, cells))
+				allzone.r <- out.list$allzonecells
 				colnames(allzone.r) <- c('var','land','rep','timestep','loc')
 			}
 
@@ -127,20 +122,16 @@ for(v in 1:nrow(variables)){
 			# DET (total detections)
 			#
 			summ.vals.r = matrix(c(id.r, unlist(out.list[c(1,2,4:9,length(out.list))])), nrow=1)
+
 			colnames(summ.vals.r) <- c('var','land','rep',names(out.list[c(1,2,4:9,length(out.list))]))
 
 			# Put new results in output objects OR add new results to existing output objects
 			if(r==1&l==1&v==1){
 				tm.mat = tm.mat.r
 				summ.vals = summ.vals.r
-				print(allzone)
 				if ("incidence" %in% out.opts) incidence = incidence.r
 				if (end.tm > detectday & "alldetections" %in% out.opts) {
 					detections = detections.r
-					print(dim(allzone))
-print(head(allzone))
-print(dim(allzone.r))
-print(head(allzone.r))
 
 					allzone = allzone.r
 					colnames(allzone) <- c('var','land','rep','timestep','loc')

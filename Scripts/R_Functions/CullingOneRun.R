@@ -51,6 +51,7 @@ fullZONE=rbind(idZONE,idout)
 
 #get all unique grid cells in the zone
 allINzone=unique(fullZONE[,2])
+allINzone <- allINzone[!is.na(allINzone)] ## clean out the rows of NA values, ain't nobody got time for that
 
 #get total number of grid cells in the zone	
 Uall=length(allINzone)
@@ -140,7 +141,7 @@ if(pigsinzone>0){
 	#determine density-dependent capture probability in this radius
 # 	cprob=1-(1/(1+alphaC)^Dr) ## this is stupid
 	norm.val <- TwoDt(0, 3, Rad/2)
-	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = 0.25*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = 0.5*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
 # 	fullZONEpigs <- cbind(fullZONEpigs, prob.cull = Intensity*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
 
 	#get total number culled/removed/sampled in the zone

@@ -281,28 +281,31 @@ deadguys<-pop[pop[,12]>0|pop[,13]>0,,drop=FALSE]
 
 #if there are deadguys....
 if(nrow(deadguys)!=0){
-#remove abundance and all live guy counts from deadguy set
-deadguys[,1]=0
-deadguys[,8]=0
-deadguys[,9]=0
-deadguys[,10]=0
-deadguys[,11]=0
+    #remove abundance and all live guy counts from deadguy set
+    deadguys[,1]=0
+    deadguys[,8]=0
+    deadguys[,9]=0
+    deadguys[,10]=0
+    deadguys[,11]=0
 
-#set all deadguys in pop rows to zero
-# pop[which(pop[,12]>0),12]<-0
-pop[,12][pop[,12] > 0] <- 0 ## as in other places, this handles the 1 row matrix issue
-# pop[which(pop[,13]>0),13]<-0
-pop[,13][pop[,13] > 0] <- 0
+    #set all deadguys in pop rows to zero
+    # pop[which(pop[,12]>0),12]<-0
+    pop[,12][pop[,12] > 0] <- 0 ## as in other places, this handles the 1 row matrix issue
+    # pop[which(pop[,13]>0),13]<-0
+    pop[,13][pop[,13] > 0] <- 0
 
-#add deadguys to pop matrix
-pop<-rbind(pop,deadguys) ## does this make duplicate rows in the pop matrix?
-## yes? I guess the columns add up to the right numbers... but ...why?
+    #add deadguys to pop matrix
+    pop<-rbind(pop,deadguys) ## does this make duplicate rows in the pop matrix?
+    ## yes? I guess the columns add up to the right numbers... but ...why? (fixed below)
 
 }
 
 #Update abundance numbers (live individuals only count in abundance)
 pop[,1]=rowSums(pop[,8:11,drop=FALSE]) ## drop=FALSE to handle single row matrix case
 # })
+
+## eliminate anything where there are no pigs or carcasses at all
+pop <- pop[rowSums(pop[,8:13,drop=FALSE]) > 0,]
 
 return(list(pop,Incidence,BB,"Eep"=sum(Eep),"Sdpb"=sum(Sdpb),"Sdpd"=sum(Sdpd),"Iep"=sum(Iep),"Edp"=sum(Edpd),"Rep"=sum(Rep),"Cep"=sum(Cep),"Rdpd"=sum(Rdpd),"Ccd"=sum(Ccd),"Zcd"=sum(Zcd)))
 
