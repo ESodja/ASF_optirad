@@ -64,8 +64,8 @@ if("idzone"%in%out.opts){
 
 if("alldetections" %in% out.opts){
   detections=matrix(nrow=0, ncol=7)
-#   allzone=matrix(nrow=0, ncol=5)
-  allzone<-as.list(rep(0,thyme))
+  allzone=matrix(nrow=0, ncol=5)
+#   allzone<-as.list(rep(0,thyme))
 }
 
 if("incidence" %in% out.opts){
