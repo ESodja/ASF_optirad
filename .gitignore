@@ -1,4 +1,6 @@
 ./Parameters.txt
 Landscape_Setup
 *.png
-test_outputs
+./test_outputs/*
+./_targets.yaml
+./_targets/meta/meta
