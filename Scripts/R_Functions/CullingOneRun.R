@@ -51,6 +51,7 @@ fullZONE=rbind(idZONE,idout)
 
 #get all unique grid cells in the zone
 allINzone=unique(fullZONE[,2])
+allINzone <- allINzone[!is.na(allINzone)] ## clean out the rows of NA values, ain't nobody got time for that
 
 #get total number of grid cells in the zone	
 Uall=length(allINzone)

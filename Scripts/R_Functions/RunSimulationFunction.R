@@ -95,9 +95,10 @@ for(v in 1:nrow(variables)){
 				detections.r = cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)
 				colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
 
-				tmstep <- unlist(lapply(seq(out.list$allzonecells), function(x) rep(x, length(out.list$allzonecells[[x]]))))
-				cells <- unlist(lapply(seq(out.list$allzonecells), function(x) out.list$allzonecells[[x]]))
-				allzone.r <- cbind(matrix(id.r, ncol=3, nrow=length(tmstep), byrow=TRUE), data.table(tmstep, cells))
+# 				tmstep <- unlist(lapply(seq(nrow(out.list$allzonecells)), function(x) rep(x, length(out.list$allzonecells[[x]]))))
+# 				cells <- unlist(lapply(seq(out.list$allzonecells), function(x) out.list$allzonecells[[x]]))
+# 				allzone.r <- cbind(matrix(id.r, ncol=3, nrow=length(tmstep), byrow=TRUE), data.table(tmstep, cells))
+				allzone.r <- out.list$allzonecells
 				colnames(allzone.r) <- c('var','land','rep','timestep','loc')
 			}
 
