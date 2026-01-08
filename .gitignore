@@ -4,3 +4,4 @@ Landscape_Setup
 ./test_outputs/*
 ./_targets.yaml
 ./_targets/meta/meta
+*.zip

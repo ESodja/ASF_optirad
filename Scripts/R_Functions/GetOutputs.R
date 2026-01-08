@@ -1,5 +1,5 @@
 
-GetOutputs<-function(pop,centroids,BB,Incidence,Tculled,ICtrue,out,detectday,Ct,out.opts,input.opts){
+GetOutputs<-function(pop,centroids,BB,Incidence,Tculled,ICtrue,out,detectday,Ct,out.opts,input.opts, is.burn=FALSE){
   
   #List of outputs created here:	
 	#Tinc #sum of all exposures over simulation 
@@ -73,7 +73,8 @@ list.all=list("Tinc"=Tinc,
               "TincToDD"=TincToDD,
               "TincFromDD"=TincFromDD,
               "DET"=DET,
-							"Ct"=Ct)
+              "Ct"=Ct,
+              "pop"=pop)
 
 #############################################################
 
@@ -88,7 +89,12 @@ list.all=list("Tinc"=Tinc,
 if("sounderlocs"%in%out.opts){
   
   loc.list=input.opts$loc.list
-for(i in 1:length(input.opts$loc.list)){
+  if (is.burn == TRUE){
+    input.rng <- 1:length(input.opts$loc.list)
+  } else {
+    input.rng <- (burn_weeks+1):length(input.opts$loc.list)
+  }
+for(i in input.rng){
 
 
   if(length(loc.list[[i]])!=0){
@@ -97,17 +103,17 @@ for(i in 1:length(input.opts$loc.list)){
 
 #   colnames(locs.i)=c("x","y","unknown") ## this causes issues if you have a homogeneous landscape (centroids has two columns, not three)
   colnames(locs.i)=c("x","y","unknown")[seq(ncol(locs.i))]
-  locs.i$timestep=i
-  locs.i$S=loc.list[[i]][,2]
-  locs.i$E=loc.list[[i]][,3]
-  locs.i$I=loc.list[[i]][,4]
-  locs.i$R=loc.list[[i]][,5]
-  locs.i$C=loc.list[[i]][,6]
-  locs.i$Z=loc.list[[i]][,7]
-  if(i==1){
-    locs.df=locs.i
-  } else{
-    locs.df=rbind(locs.df,locs.i)
+  locs.i$timestep <- i
+  locs.i$S <- loc.list[[i]][,2]
+  locs.i$E <- loc.list[[i]][,3]
+  locs.i$I <- loc.list[[i]][,4]
+  locs.i$R <- loc.list[[i]][,5]
+  locs.i$C <- loc.list[[i]][,6]
+  locs.i$Z <- loc.list[[i]][,7]
+  if(i == 1 | i == burn_weeks + 1){
+    locs.df <- locs.i
+  } else {
+    locs.df <- rbind(locs.df,locs.i)
   }
   }
 }
