@@ -228,7 +228,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         unq.incidence[,loc.max := NULL]
         setorder(unq.incidence, var, land, rep, timestep, loc)
 
-        browser()
+#         browser()
 
         mapply(function(i, j, k){
             sub.incidence <- unique(unq.incidence[var==i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
