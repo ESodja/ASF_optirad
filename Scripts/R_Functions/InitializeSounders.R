@@ -20,6 +20,7 @@ InitializeSounders<-function(centroids,grid,pop_init_args,pop_init_grid_opts="ho
 	## Parse input args and check input formatting ------------
 	
   #Check main input args
+#     browser()
   if(pop_init_type=="init_pop"){
     if(length(pop_init_args)<2){
       stop("Missing input args to initialize population")

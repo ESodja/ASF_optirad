@@ -254,7 +254,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
             }
             out.gif <- paste0('testgif',i,j,k,'.gif')
             saveGIF({
-                lapply(seq(max(sub.incidence[,timestep])), plot.step)
+                lapply(seq(burn_weeks, max(sub.incidence[,timestep])), plot.step)
             }, movie.name = out.gif, ani.width=600, ani.height=600, interval=0.1, imgdir='./test_outputs')
         }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 

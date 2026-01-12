@@ -168,11 +168,12 @@ list(
                               }),
 
     ### Get surface parameters: ---------------
-    tar_target(parameters, if(parameters00$grid_opts == 'ras'){
+    tar_target(parameters, {if(parameters00$grid.opts == 'ras'){
                               GetSurfaceParms(parameters00,plands_sprc[1])
                            } else { ## how this was structured was overwriting parameters from Parameters.txt with raster values, which were different (specifically inc for cell dimensions)
+#                                    parameters00$area <- inc^2
                               parameters00
-                           } ),
+    } }),
 
 
   ## Run Model ---------------

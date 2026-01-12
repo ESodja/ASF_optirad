@@ -113,7 +113,7 @@ These two parameters only need to be set if manually creating heterogeneous or h
 ## Note that in the model some of these dimensions are hard-coded (e.g. 40K cells)
 
 ~ len = 200
-~ inc = 0.4
+~ inc = 0.5
 
 * grid.opts, character, grid option for input type and whether to incorporate land class if creating grid from scratch. If using a raster input, you can ignore this input. If inputting a raster to the InitializeGrids function, this value defaults to 'ras'. If making a grid by inputting len/inc, default is homogeneous.
 	ras- use input raster to create grid
