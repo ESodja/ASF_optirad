@@ -43,7 +43,7 @@ RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_fun
             centroids <- land_grid_list[[l]]$centroids
             grid <- land_grid_list[[l]]$grid
 
-            pop <- InitializeSounders(centroids,grid,c(N0,ss),pop_init_grid_opts)
+            pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
             outputs <- Initialize_Outputs(parameters)
             # Burn-in of pig population (similar to SimulateOneRun.R, but no infection)
             out.burn <- BurnIn(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
@@ -54,14 +54,15 @@ RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_fun
                 # subsequent burn-ins
                 rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts, rep.out)
             }
-            pop <- InitializeInfection(out.burn$pop,centroids,grid,parameters)
+            pop <- InitializeInfection(out.burn$pop, centroids, grid, parameters)
 
             for(r in 1:reps){
                 # each rep starts in the same post burn-in condition
 
                 #Do simulations
-                out.list <- SimulateOneRun(outputs,pop,centroids,grid,parameters,cpp_functions,K, v, l, r)
+                out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
                 #Handle outputs
+                print('repoutputs')
                 rep.out <- rep_outputs(out.list, v, l, r, parameters, out.opts, rep.out)
             } # end rep loop
         } # end landscape loop

@@ -296,8 +296,10 @@ if(nrow(deadguys)!=0){
 
     #add deadguys to pop matrix
     pop<-rbind(pop,deadguys) ## does this make duplicate rows in the pop matrix?
-    ## yes? I guess the columns add up to the right numbers... but ...why? (fixed below)
-
+    ## yes? I guess the columns add up to the right numbers... but ...why?
+    ## I see... the rows of pop correspond to sounders, and the dead individuals in a given cell stay while the live ones move on
+    ## so sounders stay separate from each other when they are in the same location, because they are social and all that.
+    ## but do they ever split? maybe not important at this scale
 }
 
 #Update abundance numbers (live individuals only count in abundance)

@@ -75,7 +75,7 @@ Initialize_Outputs<-function(parameters){
 
     values <- as.list(environment())
     values <- values[setdiff(names(values), names(formals()))]
-    values <- values[setdiff(names(values),names(parameters))]
+    values <- values[setdiff(names(values), names(parameters))]
 
     return(values)
 

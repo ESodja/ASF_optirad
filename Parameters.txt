@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 32
+~ thyme = 52
 
 ############################
 #### Movement parameters ###
@@ -66,15 +66,25 @@ rate = 0.3550
 
 Originally, these were all pulled into model with 'ModelStateSwitch.R' by reading in pairwise contact data from field studies
 
-## changed to reflect individual state values (see the stuff at the bottom of this file)
-~ F1_FL = 0.7380952
-~ F1_SC = 0.9375
+## Transmission rate within grid cells -- "omega_w" in 2022 paper
+~ F1__FL = 0.7380952
+~ F1__SC = 0.9375
 
-### Added to allow StateChanges and downstream functions to run
-~ F2_int = -0.800939073371641
-~ F2_B = -1.91283149755244
-~ F2i_int = 2.32150593181132
-~ F2i_B = -6.3722548347205
+### Florida values
+## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
+~ F2_int__FL = -0.800939073371641
+~ F2_B__FL = -1.91283149755244
+## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
+~ F2i_int__FL = 2.32150593181132
+~ F2i_B__FL = -6.3722548347205
+
+### S. Carolina values
+## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
+~ F2_int__SC = 0.64
+~ F2_B__SC = -1.16
+## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
+~ F2i_int__SC = 9.82
+~ F2i_B__SC = -4.11
 
 ~ K = 1500
 ## carrying capacity; currently hard-coded in RunSimulationFunction.R
@@ -85,9 +95,9 @@ Originally, these were all pulled into model with 'ModelStateSwitch.R' by readin
 #### Pig population parameters ###
 ##################################
 
-* density, pigs/km2. Recommended density levels: 1.5, 3, 5 pigs/km2
-* ss, sounder size
-* B1, probability of infection given contact
+* density, pigs/km2. Recommended density levels: 1.5, 3, 5 pigs/km2, for initial distribution
+* ss, sounder size targetr for initial distribution
+* B1 -- "phi" in 2022 paper -- scaling parameter for transmission probability given contact among grid cells -- direct transmission
 
 For now, sounder size (ss) and probability of infection given contact (B1) will be automatically determined based on input density levels as follows:
 	FL:
@@ -209,24 +219,24 @@ input = c("shape_rate","density_ss_B1_B2")#,"Radius")
 
 These can be changed, but are the foundational values for the state-based movement models.
 To select one state over the other, set state=FL or SC. Other state values could be added as
-necessary, using the same form (e.g. state=c("AZ"), shape_AZ, rate_AZ, B1_AZ). Anything with
-A range of values will be used as a distinct parameter combination UNLESS it is B1_[state],
+necessary, using the same form (e.g. state=c("AZ"), shape__AZ, rate__AZ, B1__AZ). Anything with
+A range of values will be used as a distinct parameter combination UNLESS it is B1__[state],
 density, or ss because these are associated (thus they should be the same length).
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
 ~ state = c("FL")
 state = c("FL","SC")
-~ shape_FL = 0.7515
-~ rate_FL = 0.3550
-~ B1_FL = c(0.9, 0.2)
-B1_FL = c(0.9, 0.4, 0.2)
+~ shape__FL = 0.7515
+~ rate__FL = 0.3550
+~ B1__FL = c(0.9, 0.2)
+B1__FL = c(0.9, 0.4, 0.2)
 
-~ shape_SC = 0.5657
-~ rate_SC = 1.9082
-B1_SC = c(0.004)
-~ B1_SC = c(0.009, 0.002)
-B1_SC = c(0.009, 0.004, 0.002)
+~ shape__SC = 0.5657
+~ rate__SC = 1.9082
+B1__SC = c(0.004)
+~ B1__SC = c(0.009, 0.002)
+B1__SC = c(0.009, 0.004, 0.002)
 
 ~ B2_B1_factor = 0.5
 density = c(1.5)
@@ -251,7 +261,7 @@ ss = c(2, 4, 6)
 		)
 
 
-~ burn_weeks = 10
+~ burn_weeks = 5
 
 
 

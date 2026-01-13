@@ -37,10 +37,16 @@ SetVarParms<-function(parameters, inputs){
 # 								,B1=rep(c(parameters$B1_FL, parameters$B1_SC), each=length(parameters$state)/length(parameters$density))
 # )
 
-	B1=unlist(lapply(parameters$state, function(x){parameters[paste0('B1_',x)]}))
-	names(B1) <- unlist(lapply(strsplit(names(B1), '_'), function(x) x[[2]]))
-	names(B1) <- unlist(lapply(strsplit(names(B1), '\\d'), function(x) x[[1]]))
-	B1_tab <- data.frame(state = names(B1), B1 = B1)
+	B1=unlist(lapply(parameters$state, function(x){parameters[paste0('B1__',x)]}))
+    rename.to.state <- function(vars){
+        varname <- deparse(substitute(vars))
+        names(vars) <- unlist(lapply(strsplit(names(vars), '__'), function(x) x[[2]]))
+        names(vars) <- unlist(lapply(strsplit(names(vars), '\\d'), function(x) x[[1]]))
+        tab <- data.frame(names(vars), vars)
+        names(tab) <- c('state', varname)
+        return(tab)
+    }
+    B1_tab <- rename.to.state(B1)
 	canonical.params <- merge(canonical.params, B1_tab, on=state)
 	## join user defined variables with canonical parameters
 	common.columns = names(canonical.params)[names(canonical.params) %in% names(temptab)]
@@ -48,13 +54,23 @@ SetVarParms<-function(parameters, inputs){
 	## calculate B2 (relative to B1)
 	result$B2 <- result$B1*parameters$B2_B1_factor
 
-	shapes <- parameters[grep('^shape_',names(parameters))]
-	rates <- parameters[grep('^rate_',names(parameters))]
-	F1s <- parameters[grep('^F1_', names(parameters))]
-	shaperate_table <- data.frame(state = unlist(lapply(strsplit(names(rates), '_'), function(x) unlist(x)[2])),
-								  shape = unlist(shapes),
-								  rate = unlist(rates),
-								  F1 = unlist(F1s))
+    shape <- unlist(parameters[grep('^shape__',names(parameters))])
+    rate <- unlist(parameters[grep('^rate__',names(parameters))])
+    F1 <- unlist(parameters[grep('^F1__', names(parameters))])
+    F2_int <- unlist(parameters[grep('^F2_int', names(parameters))])
+    F2_B <- unlist(parameters[grep('^F2_B', names(parameters))])
+    F2i_int <- unlist(parameters[grep('^F2i_int', names(parameters))])
+    F2i_B <- unlist(parameters[grep('^F2i_B', names(parameters))])
+
+    shapes <- rename.to.state(shape)
+    rates <- rename.to.state(rate)
+    F1s <- rename.to.state(F1)
+    F2_ints <- rename.to.state(F2_int)
+    F2_Bs <- rename.to.state(F2_B)
+    F2i_ints <- rename.to.state(F2i_int)
+    F2i_Bs <- rename.to.state(F2i_B)
+
+    shaperate_table <- Reduce(function(x1,x2) merge(x1,x2, by='state'), list(shapes, rates, F1s, F2_ints, F2_Bs, F2i_ints, F2i_Bs))
 
 	result <- inner_join(result, shaperate_table, by='state')
 # # 	for(i in 1:length(names(variable))){
@@ -86,5 +102,4 @@ SetVarParms<-function(parameters, inputs){
 # 	colnames(result) <- unlist(lapply(strsplit(names(unlist(inputs, recursive=FALSE)), '.', fixed=TRUE), function(x) x[2]))
 
 	return(result)
-	
 }

@@ -39,9 +39,9 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 		#get all grid cells where the distance between that grid cell and an infected detected pig is less than the pre-determined radius
 		idout <- pairedIDs[pairedIDs[,3]<=Rad,]
 
-		} else{ #else, if no infections detected in last time step...no new grid cells added
-			idout <- matrix(nrow=0,ncol=3)
-		}
+	} else { #else, if no infections detected in last time step...no new grid cells added
+		idout <- matrix(nrow=0,ncol=3)
+	}
 
 	#remove NAs
 
@@ -65,6 +65,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 
 	#get total number of pigs (live and dead) in zone
 	pigsinzone <- sum(pop[soundINzone,1],pop[soundINzone,12],pop[soundINzone,13])
+	pigsinzone.loc <- rowSums(pop[soundINzone, 8:13])
 
 	#total number of exposed/infected/infectious carcass pigs in zone
 	EICinzone <- sum(pop[soundINzone,9],pop[soundINzone,10],pop[soundINzone,12])
@@ -87,7 +88,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 	#####################################
 	###### Begin Culling Algorithm ######
 	#####################################
-
+# browser()
 	#if there are pigs to cull...
 	# if(is.na(pigsinzone)){pigsinzone=0} ## if there are na's here, it means there are issues further up that probably shouldn't be glossed over...
 	if(pigsinzone>0){
@@ -117,7 +118,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 		fullZONEpigs <- merge(fullZONE, popINzone[,c(1,3,8:13)], by.x=2, by.y=2)
 		## all the rows without pigs would be removed anyway below, so don't need all.x=TRUE
 		## need to consolidate destination cells to one row (no repeat cell values in fullZONEpigs col. 1)
-		fullZONEpigs <- aggregate(fullZONEpigs[,4:10], list(loc.cell=fullZONEpigs[,'V2'], detect.cell=fullZONEpigs[,'V1'], dist=fullZONEpigs[,'V3']), sum)
+		fullZONEpigs.agg <- aggregate(fullZONEpigs[,5:10], list(loc.cell=fullZONEpigs[,'V2'], detect.cell=fullZONEpigs[,'V1'], dist=fullZONEpigs[,'V3']), sum)
 
 
 		#remove rows from fullZONEpigs without pigs
@@ -140,12 +141,21 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 	#     print(paste('Dr', Dr))
 		#determine density-dependent capture probability in this radius
 	#     cprob=1-(1/(1+alphaC)^Dr) ## this is stupid
+# 		pigdensity <-
+# 		browser()
+		cprob <- 1 - 1/((1 + alphaC)^(rowSums(fullZONEpigs.agg[,4:9])/0.16)) # 0.16 is area of a sounder zone (0.4 x 0.4 km)
 		norm.val <- TwoDt(0, 3, Rad/2)
-		fullZONEpigs <- cbind(fullZONEpigs, prob.cull = 0.25*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+		dist.weight <- 0.5*TwoDt(fullZONEpigs.agg[,'dist'], 3, Rad/2)/norm.val
 	#     fullZONEpigs <- cbind(fullZONEpigs, prob.cull = Intensity*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
+		fullZONEpigs.agg <- cbind(fullZONEpigs.agg, cprob, dist.weight, rowSums(fullZONEpigs.agg[,4:9]))
+		names(fullZONEpigs.agg)[ncol(fullZONEpigs.agg)] <- 'cell.total'
+		fullZONEpigs.agg[,'cull.cell'] <- rbinom(nrow(fullZONEpigs.agg), fullZONEpigs.agg[,'cell.total'], fullZONEpigs.agg[,'cprob'] * fullZONEpigs.agg[,'dist.weight'] * Intensity)
 
 		#get total number culled/removed/sampled in the zone
 	#     numb <- rbinom(pigsinzone,1,cprob*Intensity) ## this is stupid
+# 		browser()
+# 		fullZONEpigs.agg <- cbind(fullZONEpigs.agg, cprob*dist.weight, rbinom(nrow(fullZONEpigs.agg), 1, cprob*Intensity*dist.weight)) ## this is stupid
+		fullZONEpigs <- merge(fullZONEpigs, fullZONEpigs.agg[,c(1:3,10:13)], by.x=c('V2','V1','V3'), by.y=c('loc.cell','detect.cell','dist'))
 		## there is an issue here -- as the densisty of pigs in the zone goes down, the number of pigs you will cull also goes down, which makes sense. BUT because the area is expanding as you initially find more, the density is also decreasing. Eventually you've killed all the pigs that are infected within your zone more or less, but you also have live ones moving in. Eventually you start killing uninfected pigs moving in to the region near your detection points, while not getting any more detections because when you start nearest the detection and work outwards you end up with a limited number of target culled individuals because the area is so big and the population is so small, and the disease becomes so rare in that area that you stop detecting any more. maybe.
 		## I would say it would make more sense to base the probability of detection off of distance from previous detection points, because the lowered density (between pop decline and area increase) reduces the number of individuals you are culling faster than the number of individuals are declining. Instead, have each sounder's distance from previous detection and, possibly, the size of the sounder, indicate its probability of detection and if that happens, it gets culled.
 		## Even if you just randomly ran around in the zone and detected sounders independent of their exact distance from detection, you could have a better result because you would prbably still have positive detections at least occasionally...
@@ -168,7 +178,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 		#         removals<-removals+fullZONEpigs[incr,4]
 		#         incr=incr+1
 		#     }
-		fullZONEpigs <- cbind(fullZONEpigs, cull.cell = rbinom(fullZONEpigs[,'prob.cull'], 1, fullZONEpigs[,'prob.cull']))
+# 		fullZONEpigs <- cbind(fullZONEpigs, cull.cell = rbinom(fullZONEpigs[,'prob.cull'], 1, fullZONEpigs[,'prob.cull']))
 		## Problem: No randomness in selection and bias toward higher? index numbers drifts detection to the south (or north, however plotted)
 		if (sum(fullZONEpigs[,'cull.cell']) > 0 & nrow(fullZONEpigs) > 0){
 			## use < instead of <= so if they hit cpigs exactly, they will stop there
@@ -185,14 +195,14 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 	#             cull.index2 <- c(1L, which(fullZONEpigs[,3] >= cull.distance) + 1L)
 	#         }
 	#         culled <- sum(fullZONEpigs[cull.index2,4])
-			culled <- sum(fullZONEpigs[fullZONEpigs[,'cull.cell'] == 1,'Nlive'])
+			culled <- sum(fullZONEpigs[fullZONEpigs[,'cull.cell'] > 0,'Nlive'])
 		#determine which pigs culled
 		#     culled=removals[[1]] ## ??? shouldn't be a list...
 		#% list of cells that pigs will be eliminated from (column index was 1 in old version)
 
-			removalcells <- fullZONEpigs[fullZONEpigs[,'cull.cell'] == 1,1]
+			removalcells <- fullZONEpigs[fullZONEpigs[,'cull.cell'] > 0, 1]
 		#get which pigs culled
-			removalpigs <- fullZONEpigs[fullZONEpigs[,'cull.cell']== 1,,drop=FALSE]
+			removalpigs <- fullZONEpigs[fullZONEpigs[,'cull.cell'] > 0,,drop=FALSE]
 
 		######################################
 		###### Update surveillance data ######
