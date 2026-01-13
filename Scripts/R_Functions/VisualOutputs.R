@@ -78,14 +78,15 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         # count up reps
         reps = unique(subdat[,rep])
         # draw a line of each type for each rep
-        lapply(reps, function(r) lines(log1p(S) ~ timestep, data=subdat[rep==r,], col='olivedrab', lty=1))
-        lapply(reps, function(r) lines(log1p(E) ~ timestep, data=subdat[rep==r,], col='orange', lty=1))
-        lapply(reps, function(r) lines(log1p(I) ~ timestep, data=subdat[rep==r,], col='red', lty=1))
-        lapply(reps, function(r) lines(log1p(R) ~ timestep, data=subdat[rep==r,], col='blue', lty=1))
-        lapply(reps, function(r) lines(log1p(C) ~ timestep, data=subdat[rep==r,], col='purple', lty=1))
-        lapply(reps, function(r) lines(log1p(Z) ~ timestep, data=subdat[rep==r,], col='black', lty=1))
-        lapply(reps, function(r) lines(log1p(BB) ~ timestep, data=subdat[rep==r,], col='pink', lty=1))
+        lapply(reps, function(r) lines(log1p(S) ~ timestep, data=subdat[rep==r | rep == 0,], col='olivedrab', lty=1))
+        lapply(reps, function(r) lines(log1p(E) ~ timestep, data=subdat[rep==r | rep == 0,], col='orange', lty=1))
+        lapply(reps, function(r) lines(log1p(I) ~ timestep, data=subdat[rep==r | rep == 0,], col='red', lty=1))
+        lapply(reps, function(r) lines(log1p(R) ~ timestep, data=subdat[rep==r | rep == 0,], col='blue', lty=1))
+        lapply(reps, function(r) lines(log1p(C) ~ timestep, data=subdat[rep==r | rep == 0,], col='purple', lty=1))
+        lapply(reps, function(r) lines(log1p(Z) ~ timestep, data=subdat[rep==r | rep == 0,], col='black', lty=1))
+        lapply(reps, function(r) lines(log1p(BB) ~ timestep, data=subdat[rep==r | rep == 0,], col='pink', lty=1))
         lapply(reps, function(r) abline(v=subdat[rep==r,max(timestep)], col='grey'))
+        lapply(reps, function(r) abline(v=subdat[rep==0,max(timestep)], col='black', lty=3))
         par(pdef2)
     }
     mapply(seirczbb.temporal, v=tm.pop.unq[,var], l=tm.pop.unq[,land], plt.i=seq(nrow(tm.pop.unq)), MoreArgs = list(rows.plt=rows.plt, cols.plt=cols.plt))
@@ -228,7 +229,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         unq.incidence[,loc.max := NULL]
         setorder(unq.incidence, var, land, rep, timestep, loc)
 
-#         browser()
+        browser()
 
         mapply(function(i, j, k){
             sub.incidence <- unique(unq.incidence[var==i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
@@ -254,10 +255,11 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
             }
             out.gif <- paste0('testgif',i,j,k,'.gif')
             saveGIF({
-                lapply(seq(max(sub.incidence[,timestep])), plot.step)
+#                 lapply(seq(parameters$burn_weeks, max(sub.incidence[,timestep])), plot.step)
+                lapply(seq(burn_weeks, max(sub.incidence[,timestep])), plot.step)
             }, movie.name = out.gif, ani.width=600, ani.height=600, interval=0.1, imgdir='./test_outputs')
         }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 
-        lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
+        #lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
     }
 }

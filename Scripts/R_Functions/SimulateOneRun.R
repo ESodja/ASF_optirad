@@ -74,10 +74,12 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         Ccd_mat[i,] <- st.list$Ccd
         Zcd_mat[i,] <- st.list$Zcd
         Iep_mat[i,] <- st.list$Iep
+#         browser()
 
         pop <- st.list[[1]]
         Incidence <- st.list[[2]]
         BB <- st.list[[3]]
+
 
         if("incidence" %in% out.opts){
 ## is there a reason this was counting from the pre-state changes list instead of st.list[[1]]?
@@ -139,6 +141,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         # If sampling turned off and it's detect day based on user input,
         # run FirstDetect because there are infected pigs to detect, and Rad>0
         if(sample != 1 & i == detectday+burn_weeks & sum(pop[, c(9, 10, 12)]) > 0 & Rad > 0){
+            print('first detect')
             fd.list <- FirstDetect(pop, i, POSlive, POSdead, POSlive_locs, POSdead_locs)
             pop <- fd.list[[1]]
             POSlive <- fd.list[[2]]
@@ -149,7 +152,6 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         }
 
 
-
 ###**start day after day of first detection
 #######################################
 ######## Initiate Culling Zone ########
@@ -158,6 +160,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 #if it is at least day after detect day, and Rad>0
         if(sample != 1 & i > detectday+burn_weeks & Rad > 0) {
 
+print('culling')
             #new detections from last step, bc day lag
             #(either from initial detection or last culling period)
             #get locations in grid for detections
@@ -241,59 +244,59 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
     print('finish')
 #############################
 #############################
-    if(length(out.opts) > 0){
-        input.opts <- vector(mode="list", length=1)
-        input.opts[[1]] <- out.opts
-        names(input.opts)[1] <- "out.opts"
-        if("sounderlocs" %in% out.opts){
-            templist <- vector(mode="list",length=1)
-            templist[[1]] <- loc.list
-            input.opts <- append(input.opts,templist)
-            names(input.opts)[length(input.opts)] <- "loc.list"
-        }
+#     if(length(out.opts) > 0){
+    input.opts <- vector(mode="list", length=1)
+    input.opts[[1]] <- out.opts
+    names(input.opts)[1] <- "out.opts"
+    if("sounderlocs" %in% out.opts){
+        templist <- vector(mode="list",length=1)
+        templist[[1]] <- loc.list
+        input.opts <- append(input.opts,templist)
+        names(input.opts)[length(input.opts)] <- "loc.list"
+    }
 
-        if("idzone"%in%out.opts){
-            templist <- vector(mode="list",length=1)
-            templist[[1]] <- idzone.mat
-            input.opts <- append(input.opts,templist)
-            names(input.opts)[length(input.opts)] <- "idzone.mat"
-        }
+    if("idzone"%in%out.opts){
+        templist <- vector(mode="list",length=1)
+        templist[[1]] <- idzone.mat
+        input.opts <- append(input.opts,templist)
+        names(input.opts)[length(input.opts)] <- "idzone.mat"
+    }
 
-        if("alldetections"%in%out.opts){
-            templist <- list(POSlive)    # directly create a list with POSlive
+    if("alldetections"%in%out.opts){
+        templist <- list(POSlive)    # directly create a list with POSlive
+        input.opts <- append(input.opts, templist)
+        names(input.opts)[length(input.opts)] <- "POSlive"
+
+        templist <- list(POSdead)
+        input.opts <- append(input.opts, templist)
+        names(input.opts)[length(input.opts)] <- "POSdead"
+
+        templist <- list(POSlive_locs)
+        input.opts <- append(input.opts, templist)
+        names(input.opts)[length(input.opts)] <- "POSlive_locs"
+
+        templist <- list(POSdead_locs)
+        input.opts <- append(input.opts, templist)
+        names(input.opts)[length(input.opts)] <- "POSdead_locs"
+
+        templist <- list(allzone)
+        input.opts <- append(input.opts, templist)
+        names(input.opts)[length(input.opts)] <- "allzonecells"
+
+        if(sample == 1){
+            templist <- list(pigs_sampled_timestep)    # directly create a list with pigs_sampled_timestep
             input.opts <- append(input.opts, templist)
-            names(input.opts)[length(input.opts)] <- "POSlive"
-
-            templist <- list(POSdead)
-            input.opts <- append(input.opts, templist)
-            names(input.opts)[length(input.opts)] <- "POSdead"
-
-            templist <- list(POSlive_locs)
-            input.opts <- append(input.opts, templist)
-            names(input.opts)[length(input.opts)] <- "POSlive_locs"
-
-            templist <- list(POSdead_locs)
-            input.opts <- append(input.opts, templist)
-            names(input.opts)[length(input.opts)] <- "POSdead_locs"
-
-            templist <- list(allzone)
-            input.opts <- append(input.opts, templist)
-            names(input.opts)[length(input.opts)] <- "allzonecells"
-
-            if(sample == 1){
-                templist <- list(pigs_sampled_timestep)    # directly create a list with pigs_sampled_timestep
-                input.opts <- append(input.opts, templist)
-                names(input.opts)[length(input.opts)] <- "pigs_sampled_timestep"
-            }
-        }
-
-        if("incidence" %in% out.opts){
-            templist <- vector(mode="list",length=1)
-            templist[[1]] <- inc.mat
-            input.opts <- append(input.opts,templist)
-            names(input.opts)[length(input.opts)] <- "incidence"
+            names(input.opts)[length(input.opts)] <- "pigs_sampled_timestep"
         }
     }
+
+    if("incidence" %in% out.opts){
+        templist <- vector(mode="list",length=1)
+        templist[[1]] <- inc.mat
+        input.opts <- append(input.opts,templist)
+        names(input.opts)[length(input.opts)] <- "incidence"
+    }
+#     }
 
     list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday+burn_weeks, Ct, out.opts, input.opts)
 ## want the end time as output to trim matrices
