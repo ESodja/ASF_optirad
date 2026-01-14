@@ -1,6 +1,5 @@
 FastMovement=function(pop,centroids,shape,rate,inc,mv_pref,RSF_mat=NULL,RSF_mat0=NULL){
 
-#   browser()
   cells <- nrow(centroids)
   #run checks to make sure objects input correctly
   ## doesn't catch NULL RSF_mat(0) inputs

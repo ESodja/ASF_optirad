@@ -74,7 +74,6 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         Ccd_mat[i,] <- st.list$Ccd
         Zcd_mat[i,] <- st.list$Zcd
         Iep_mat[i,] <- st.list$Iep
-#         browser()
 
         pop <- st.list[[1]]
         Incidence <- st.list[[2]]
@@ -160,7 +159,6 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 #if it is at least day after detect day, and Rad>0
         if(sample != 1 & i > detectday+burn_weeks & Rad > 0) {
 
-print('culling')
             #new detections from last step, bc day lag
             #(either from initial detection or last culling period)
             #get locations in grid for detections
@@ -192,7 +190,11 @@ print('culling')
             pop <- output.list[[11]]
             Ct[i,1] <- output.list[[12]]
             zone.rows <- length(output.list[[13]])
+#             browser()
             allzone <- rbind(allzone, matrix(c(rep(v, zone.rows), rep(l, zone.rows), rep(r, zone.rows), rep(i, zone.rows), output.list[[13]]), nrow=zone.rows))
+            # only add each cell once to save ram space
+            ## could use some clean up, b/c easier in data tables but have to convert a lot
+            allzone <- as.matrix(as.data.table(allzone)[,.SD[1],by='V5'][,paste0('V', seq(5))])
             Tculled[i] <- culled
 
             #compile optional outputs
@@ -238,6 +240,8 @@ print('culling')
 #Remove rows in pop with 0 pigs
         pigcols <- c(1, 8:13)
         pop <- pop[which(rowSums(pop[, pigcols, drop=FALSE]) != 0),, drop=FALSE]
+
+#         lapply(ls(), function(x) {print(x); print(object.size(x))})
 
     } # end while loop of timesteps
 
