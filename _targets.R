@@ -81,20 +81,8 @@ list(
 
   tar_target(
 # tar_force(
-  variables,SetVarParms(parameters0,
-        inputs=list() ## changed to align parameter values with states (they were mixed)
-#     "state_basis" = data.frame("state"=c("FL","SC")),
-#     "density_ss"=data.frame(
-#         "density"=c(1.5,3,5), ## were these the wrong values? different from what's in Parameters.txt
-#         "ss"=c(2,4,6)#,
-#         "B1"=c(0.9,0.4,0.2,0.009,0.004,0.002) ## B2 is calculated afterwards according to "B2_B1_factor" parameter
-#         ),
-#     ,"Radius"=data.frame( # comma at the beginning allows easy commenting out of pieces you don't want to use
-#         "Rad"=c(5,10,15,20)
-#         )
-#             )
-#         ),force=TRUE),
-)),
+  variables,SetVarParms(parameters0)
+),
     tar_target(parameters00,RemoveRedundantParms(parameters0)),
 
   ## Input cpp scripts as files to enable tracking -----  
@@ -134,17 +122,9 @@ list(
     #Value
       #a nested list of grid parameters
 
-    #multiple landscapes:
-#   tar_target(land_grid_list,InitializeGrids(plands_sprc,"heterogeneous")),
-
-    #single landscape:
-    #tar_target(land_grid_list,InitializeGrids(plands_sprc[1],"heterogeneous"))#,
-
-    #homogenous grid:
-#     tar_target(land_grid_list,InitializeGrids(c(parameters00$len,parameters00$inc),parameters00$grid.opt)),
-
     ## makes the grid.opt parameters functional to choose lands variation... shifted grid.opts = "heterogeneous" to be randomized landscape (was "random" before, but unlisted)
     ## ugly, but functional:
+    ## should probably move this to the InitializeGrids file
     tar_target(land_grid_list, {if (parameters00$pop_init_grid_opts == 'homogeneous'){
                                   if(parameters00$grid.opts != 'ras'){ ## if grid.opts is homogeneous or heterogeneous
                                     ## make a grid either uniform or random with even initial pig locations
@@ -168,41 +148,33 @@ list(
                               }),
 
     ### Get surface parameters: ---------------
-    tar_target(parameters, #{if(parameters00$grid.opts == 'ras'){
-                              GetSurfaceParms(parameters00,plands_sprc[1])
-#                            } else { ## how this was structured was overwriting parameters from Parameters.txt with raster values, which were different (specifically inc for cell dimensions)
-#                                    parameters00$area <- inc^2
-#                               parameters00
-                           ),
+    tar_target(parameters, GetSurfaceParms(parameters00, plands_sprc[1])),
+
+    ## Run Burn-In:
+    tar_target(burn.list,
+        RunBurnIn(land_grid_list = land_grid_list,
+                    parameters = parameters,
+                    variables = variables,
+                    cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
+        )
+    ),
 
   ## Run Model ---------------
   #Use tar_force format here because otherwise will only run if code has been updated
 #   tar_force(
-    tar_target(
-      out.list,
-      RunSimulationReplicates(
-          land_grid_list=land_grid_list,
-          parameters=parameters,
-            variables=variables,
-          cpp_functions=
-              list(Fast_FOI_Matrix_script,
-              Movement_Fast_Generalized_script),
-          reps=parameters$nrep
+    tar_target(out.list,
+      RunSimulationReplicates(land_grid_list = land_grid_list,
+                                parameters = parameters,
+                                variables = variables,
+                                cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script),
+                                reps = parameters$nrep,
+                                burn.list = burn.list
           )
 #           ,force=TRUE
       ),
-      ## {source('./Scripts/R_functions/RunSimulationFunction.R') ; RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep) }
+      ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets :)
+      ## {source('./Scripts/R_Functions/RunSimulationFunction.R') ; source('./Scripts/R_Functions/SimulateOneRun.R') ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(burn.list)) }
 
-    ## Run MF Model ---------------
-    #tar_target(
- #     out.list,
- #     RunMFModel(
- #         Ct=Ct,
-#            Beta=Beta,
-#         parameters=parameters,
-#            variables=variables
-#          )
-#     )
 
 #     tar_force(
     tar_target(
@@ -214,8 +186,5 @@ list(
 
 
   )
-
-  ## just to show it actually did something
-# lapply(tar_read(out.list), function(x) {print(head(x))})
 
 

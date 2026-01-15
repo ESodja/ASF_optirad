@@ -261,7 +261,7 @@ ss = c(2, 4, 6)
 		)
 
 
-~ burn_weeks = 5
+~ burn_weeks = 50
 
 
 

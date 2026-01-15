@@ -16,7 +16,7 @@
             #creates a neutral random landscape model with X lc variables
     #Value
       #a nested list of grid parameters
-RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_functions, reps){
+RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps, burn.list){
 
     ## Filters variables (parameters with >1 value) out of parameters
     ## selecting variables is done in SetVarParms.R
@@ -27,8 +27,8 @@ RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_fun
     #Need nested loops:
     #1, loop through all landscapes
     #2, loop through all parameter settings
-    for(v in 1:nrow(variables)){
-        vars <- variables[v,]
+    for(v.val in 1:nrow(variables)){
+        vars <- variables[v.val,]
         names(vars)[names(vars) == "density"] <- "dens"
         vars <- as.list(vars)
         list2env(vars, .GlobalEnv)
@@ -39,31 +39,32 @@ RunSimulationReplicates<-function(land_grid_list, parameters, variables, cpp_fun
         K=N0*1.5
 
         #loop through landscapes
-        for(l in 1:length(land_grid_list)){
-            centroids <- land_grid_list[[l]]$centroids
-            grid <- land_grid_list[[l]]$grid
+        for(l.val in 1:length(land_grid_list)){
+            centroids <- land_grid_list[[l.val]]$centroids
+            grid <- land_grid_list[[l.val]]$grid
 
-            pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
+#             pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
             outputs <- Initialize_Outputs(parameters)
             # Burn-in of pig population (similar to SimulateOneRun.R, but no infection)
-            out.burn <- BurnIn(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
-            if (v==1 & l==1){
-                # the first burn-in
-                rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts)
-            } else {
-                # subsequent burn-ins
-                rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts, rep.out)
-            }
-            pop <- InitializeInfection(out.burn$pop, centroids, grid, parameters)
+#             out.burn <- BurnIn(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
+#             if (v==1 & l==1){
+#                 # the first burn-in
+#                 rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts)
+#             } else {
+#                 # subsequent burn-ins
+#                 rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts, rep.out)
+#             }
+            pop <- as.matrix(burn.list$pops[v==v.val & l==l.val,-c('v','l')])
+            pop <- InitializeInfection(pop, centroids, grid, parameters)
 
             for(r in 1:reps){
                 # each rep starts in the same post burn-in condition
 
                 #Do simulations
-                out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
+                out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r)
                 #Handle outputs
                 print('repoutputs')
-                rep.out <- rep_outputs(out.list, v, l, r, parameters, out.opts, rep.out)
+                rep.out <- rep_outputs(out.list, v.val, l.val, r, parameters, out.opts, burn.list[1:5])
             } # end rep loop
         } # end landscape loop
     } # end variable loop
