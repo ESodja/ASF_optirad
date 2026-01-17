@@ -13,11 +13,13 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     # make things into data.tables and name columns for sanity
     tm.mat= as.data.table(out.list["tm.mat"])
     setnames(tm.mat, unlist(lapply(strsplit(names(tm.mat), 'tm.mat.'), function(x) unlist(x)[2])))
+    tm.mat <- tm.mat[!is.na(timestep),]
     summ.vals= as.data.table(out.list["summ.vals"])
     setnames(summ.vals, unlist(lapply(strsplit(names(summ.vals), 'summ.vals.'), function(x) unlist(x)[2])))
     incidence= as.data.table(out.list["incidence"])
     setnames(incidence, unlist(lapply(strsplit(names(incidence), 'incidence.'), function(x) unlist(x)[2])))
-    incidence[,max.time := max(timestep), by=.(var, rep, land)]
+    incidence <- incidence[!is.na(endtime),]
+#     incidence[,max.time := max(timestep), by=.(var, rep, land)]
     detections= as.data.table(out.list["detections"])
     setnames(detections, unlist(lapply(strsplit(names(detections), 'detections.'), function(x) unlist(x)[2])))
     if(nrow(detections) > 0) {
@@ -112,6 +114,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     ### timing and extent of incidence/detections
     # connect incidence with cell locations
+    browser()
     unq.eic <- unique(incidence[,.(var,land,rep,timestep,loc,max.time)])
     mapply(function(v, l){
         input.dat <- unq.eic[var==v & land==l & max.time >= 10,]

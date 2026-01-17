@@ -1,7 +1,10 @@
 ## repackage outputs after simulation/burn-in run
 
 rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as.list(rep(NA, 5))){
+
     list2env(parameters, .GlobalEnv)
+    burntime <- 0
+    if(r == 0){ burntime <- out.list$endtime } # if it is a burnin rep output
 
     # if it is the burnin, the r=0 below will overwrite NA defaults in this irrelevant
     # if it is after the burn-in, these will have existing values that new values will be added to
@@ -37,21 +40,21 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     # detections (optional...)
     ## has a row for each timestep AND detection type, with timestep, code (1=live,0=dead), number of individuals detected, and position
     ## still need to test sample = 1
-    if (end.tm > detectday & 'alldetections' %in% out.opts){
+    if (end.tm > detectday+burntime & 'alldetections' %in% out.opts){
         detections.r <- out.list$alldetections
-        detections.r <- detections.r[detections.r[,1] <= end.tm & detections.r[,1] >= detectday,]
+        detections.r <- detections.r[detections.r[,1] <= end.tm & detections.r[,1] >= (detectday+burntime),]
         n.det <- nrow(detections.r)
-        detections.r <- cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)
+        detections.r <- suppressWarnings(cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)) # gave a warning if there were no detections; very annoying
         colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
         allzone.r <- out.list$allzonecells
         colnames(allzone.r) <- c('var','land','rep','timestep','loc')
     }
 
     # incidence -- more rows than timesteps, separate output (optional...)
-    if ('incidence' %in% out.opts){
+    if ('incidence' %in% out.opts){ # don't want this if it's a burn-in output
         incidence.r <- out.list$incidence
         n.inc = nrow(incidence.r)
-        incidence.r <- cbind(matrix(id.r, ncol=3, nrow=n.inc, byrow=TRUE), incidence.r)
+        incidence.r <- suppressWarnings(cbind(matrix(id.r, ncol=3, nrow=n.inc, byrow=TRUE), incidence.r))
         colnames(incidence.r) <- c('var','land','rep','timestep','state','loc')
     }
 
@@ -62,13 +65,14 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     colnames(summ.vals.r) <- c('var','land','rep',names(out.list[c(1,2,4:9,length(out.list))]))
 
     # Put new results in output objects OR add new results to existing output objects
-    if(r==0 & l==1 & v==1){
+    if(r==0 & l==1 & v==1){ # i.e. if it is a burnin rep output
         tm.mat <- tm.mat.r
         summ.vals <- summ.vals.r
         if ("incidence" %in% out.opts) incidence <- incidence.r
-        if (end.tm > detectday & "alldetections" %in% out.opts) {
-            detections <- detections.r
-            allzone <- allzone.r
+        if ("alldetections" %in% out.opts) {
+            detections <- matrix(NA, ncol=7, nrow=0)
+            colnames(detections) <- c('var','land','rep','timestep','code','detected','loc')
+            allzone <- matrix(NA, ncol=5, nrow=0)
             colnames(allzone) <- c('var','land','rep','timestep','loc')
         }
 
@@ -76,7 +80,7 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
         tm.mat <- rbind(tm.mat, tm.mat.r)
         summ.vals <- rbind(summ.vals, summ.vals.r)
         if ("incidence" %in% out.opts) incidence <- rbind(incidence, incidence.r)
-        if (end.tm > detectday & "alldetections" %in% out.opts) {
+        if (end.tm > (detectday+burntime) & "alldetections" %in% out.opts) {
             detections <- rbind(detections, detections.r)
             if (is.null(nrow(allzone))) {
                 # if it hasn't been established yet

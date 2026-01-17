@@ -18,7 +18,10 @@
       #a nested list of grid parameters
 RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps, burn.list){
 
-    ## Filters variables (parameters with >1 value) out of parameters
+    # Pull values from burn-in for mort_val parameter
+    variables$mort_val <- unlist(burn.list[18,])
+
+    # Filter variables (parameters with >1 value) out of parameters
     ## selecting variables is done in SetVarParms.R
     parameters <- parameters[names(parameters) %in% names(variables) == FALSE]
 
@@ -27,49 +30,66 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     #Need nested loops:
     #1, loop through all landscapes
     #2, loop through all parameter settings
-    for(v.val in 1:nrow(variables)){
+
+    # looping table for mapply
+    lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep=seq(reps))
+    lvtable$iterate <- rep(seq(max(c(lvtable[,1], lvtable[,2]))), max(lvtable[,3]))
+
+    rep.list <- mapply(function(v.val, l.val, r.val, i.val){
+
         vars <- variables[v.val,]
         names(vars)[names(vars) == "density"] <- "dens"
         vars <- as.list(vars)
         list2env(vars, .GlobalEnv)
 
         #calc vals based on variables
-        ## could set these as variables/parameter options
         N0=dens*area
         K=N0*1.5
 
+        burn.input <- burn.list[,i.val]
+
+        burn.times <- unlist(burn.list[17,])
         #loop through landscapes
-        for(l.val in 1:length(land_grid_list)){
-            centroids <- land_grid_list[[l.val]]$centroids
-            grid <- land_grid_list[[l.val]]$grid
+        centroids <- land_grid_list[[l.val]]$centroids
+        grid <- land_grid_list[[l.val]]$grid
 
 #             pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
-            outputs <- Initialize_Outputs(parameters)
-            # Burn-in of pig population (similar to SimulateOneRun.R, but no infection)
-#             out.burn <- BurnIn(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r)
-#             if (v==1 & l==1){
-#                 # the first burn-in
-#                 rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts)
-#             } else {
-#                 # subsequent burn-ins
-#                 rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts, rep.out)
-#             }
-            pop <- as.matrix(burn.list$pops[v==v.val & l==l.val,-c('v','l')])
-            pop <- InitializeInfection(pop, centroids, grid, parameters)
+        pop <- as.matrix(burn.input[[1]][,-c(1,2)])
+        pop <- InitializeInfection(pop, centroids, grid, parameters)
+        outputs <- Initialize_Outputs(parameters)
+        outputs$BB <- burn.input[[2]]
+        outputs$Incidence <- burn.input[[3]]
+        outputs$Tculled <- burn.input[[4]]
+        outputs$ICtrue <- burn.input[[5]]
+        outputs$out <- burn.input[[6]]
+        outputs$detectday <- burn.input[[7]]
+        outputs$Ct <- burn.input[[8]]
+        outputs$loc.list <- burn.input[[10]]
+        outputs$POSlive <- burn.input[[11]]
+        outputs$POSdead <- burn.input[[12]]
+        outputs$POSlive_locs <- burn.input[[13]]
+        outputs$POSdead_locs <- burn.input[[14]]
+        outputs$allzone <- burn.input[[15]]
+        outputs$incidence <- cbind(matrix(NA, nrow=0, ncol=3), burn.input[[16]])
+        burn.time.vl <- burn.input[[17]]
 
-            for(r in 1:reps){
-                # each rep starts in the same post burn-in condition
+        # each rep starts in the same post burn-in condition
 
-                #Do simulations
-                out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r)
-                #Handle outputs
-                print('repoutputs')
-                rep.out <- rep_outputs(out.list, v.val, l.val, r, parameters, out.opts, burn.list[1:5])
-            } # end rep loop
-        } # end landscape loop
-    } # end variable loop
+        #Do simulations
+        out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r.val, burn.time.vl)
+        #Handle outputs
+        rep.out <- rep_outputs(out.list, v.val, l.val, r.val, parameters, out.opts)
+        return(rep.out)
+    },
+    v.val=lvtable[,1], l.val=lvtable[,2], r.val = lvtable[,3], i.val=lvtable[,4])
 
-    return(list('tm.mat' = rep.out[[1]], 'summ.vals' = rep.out[[2]], 'incidence' = rep.out[[3]], 'detections' = rep.out[[4]], 'allzone' = rep.out[[5]]))
+    tm.mat <- rbindlist(rep.list[1,])
+    summ.vals <- rbindlist(lapply(rep.list[2,], as.data.table))
+    incidence <- rbindlist(rep.list[3,])
+    detections <- rbindlist(lapply(rep.list[4,][!is.na(rep.list[4,])], as.data.table))
+    allzone <- rbindlist(lapply(rep.list[5,][!is.na(rep.list[5,])], as.data.table))
+
+    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone))
 }
 
 

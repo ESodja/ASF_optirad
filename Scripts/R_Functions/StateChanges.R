@@ -71,7 +71,8 @@ liverows<-which(pop[,8,drop=FALSE]>0|pop[,9,drop=FALSE]>0|pop[,11,drop=FALSE]>0)
 ## later in the infection for a given location; i.e. anywhere with only 1 or 2 pigs join the nearest group of >2 pigs in neighboring cells at random)
 ## young pigs also are supposed to respond differently to the virus than older pigs (read that somewhere), so spatiotemporal age dynamics might also be important
 ## i.e. if you have a bunch of piglets in one spot, they might all catch the virus but also quickly die
-reprod.fem = ceiling(rowSums(pop[,c(8,9,11)])) ## reproductive females (assuming 50/50 M/F split in any location; assume half pigs are female)
+reprod.fem = rowSums(pop[,c(8,11)]) ## reproductive females -- generally if there is a large group, the adults are females; males live "wild and free"; excluded exposes b/c they probably don't reproduce well?
+reprod.fem[reprod.fem <= 2] <- 0
 # reprod.fem = ceiling(rowSums(pop[,c(8,9,11)])/2) ## reproductive females (assuming 50/50 M/F split in any location; assume half pigs are female)
 piglets = pmin(10*reprod.fem,rnbinom(nrow(pop), mu=reprod.fem*Pbd*5, size=0.01)) ## more realistic per-cap reproduction by cell
 ## caps litters at 10 per female, average is 5, times weekly growth rate from 2022 paper. 0.01 gives a good clumping measure. mu is probably wrong-- check mean of nbinom definitions in help file.
@@ -171,8 +172,7 @@ Pic=1-exp(-1/(rpois(cells,5)/7)) #transitions infected to either dead or recover
 ## the problem with this structure is you can have inter-dimensional swine-shifting as they spontaneously appear and disappear from the temporal plane
 
 ## density dependent death
-## change 25's to modifiable parameter
-death=exp(-25+((1+death)*rowSums(pop[,c(8:11)])))/(1+exp(-25+((1+death)*rowSums(pop[,c(8:11)]))))
+death=exp(-mort_val+((1+death)*rowSums(pop[,c(8:11)])))/(1+exp(-mort_val+((1+death)*rowSums(pop[,c(8:11)]))))
 ## when population is too high, top and bottom of the above function become Inf, leading to NaN values which cause errors in rbinom()
 ## to prevent errors, change NaN values to 1 because this is a probability
 death[is.nan(death)] <- 1
