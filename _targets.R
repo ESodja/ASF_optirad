@@ -173,7 +173,7 @@ list(
 #           ,force=TRUE
       ),
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets :)
-      ## {source('./Scripts/R_Functions/RunSimulationFunction.R') ; source('./Scripts/R_Functions/SimulateOneRun.R') ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(burn.list)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(burn.list)) }
 
 
 #     tar_force(

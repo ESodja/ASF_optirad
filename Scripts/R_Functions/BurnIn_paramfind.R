@@ -1,6 +1,6 @@
 ## Runs a burn-in for a given parameter set
 
-BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l){
+BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l){
     require(dplyr)
     for(i in 1:length(cpp_functions)){
         print(paste0("sourcing ",cpp_functions[[i]]))
@@ -20,10 +20,9 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     ## which means we need to measure density throughout...
     dens.list <- c(sum(pop[,1])/(nrow(centroids) * inc^2))
     dens.var <- 99
-    dens.mean <- 1
 
 #     while(i < burn_weeks){
-    while((i < 10 | dens.var > 0.1 | abs(dens.mean-dens) > 0.05) & i < burn_weeks){
+    while((i < 10 | dens.var > 0.1) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))
@@ -50,7 +49,7 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
 ######## State Changes ########
 #births, natural deaths, disease state changes (exposure, infection, recovery, death), carcass decay
 
-#         browser()
+        print(dim(pop))
         st.list <- StateChanges(pop, centroids, nrow(centroids), parameters, Incidence, BB, i)
 
         Eep_mat[i,] <- st.list$Eep
@@ -91,9 +90,8 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
         dens.list <- c(dens.list, sum(pop[,1])/(nrow(centroids) * inc^2))
         dens.recent <- dens.list[max(1,(length(dens.list)-10)):length(dens.list)]
         dens.var <- var(dens.recent)
-        dens.mean <- mean(dens.recent)
-        print(c(dens.var, dens.mean))
     } # end while loop of timesteps
+    dens.mean <- mean(dens.recent)
 
     print('finish')
 
@@ -145,16 +143,11 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     }
 #     }
 
-    print('endburnin')
-    ## these will be more useful to pass to the simulation as inputs
-    pop <- cbind(v, l, pop)
-    return(list(pop, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, loc.list, POSlive, POSdead, POSlive_locs, POSdead_locs, allzone, inc.mat, i))
+    list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts, is.burn=TRUE)
 
-#     list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts, is.burn=TRUE)
-#
-# ## want the end time as output to trim matrices
-#     list.all <- append(list.all, i)
-#     names(list.all)[length(list.all)] <- 'endtime'
-#
-#     return(list.all)
+## want the end time as output to trim matrices
+    list.all <- append(list.all, i)
+    names(list.all)[length(list.all)] <- 'endtime'
+
+    return(list(mort_val, dens.var, dens.mean))
 } #function closing bracket

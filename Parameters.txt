@@ -263,6 +263,11 @@ ss = c(2, 4, 6)
 
 ~ burn_weeks = 50
 
+# mort_val is the parameter that controls where the inflection point of the mortality for pigs lies, i.e. mortality within a sounder (as yet not in the cell, but maybe soon) is much higher once the sounder size passes mort_val; this will be adjusted to identify what values give target densities at the end of a burn in period not to exceed burn_weeks above
+~ mort_val = 10
+
+# mort_val_test is a range of values to calibrate the burin to get the value of mort_val that should be included to get the target density from the burn-in
+~ mort_val_test = c(5,15)
 
 
 

@@ -5,14 +5,13 @@ SetVarParms<-function(parameters){
 ## this doesn't work -- no "input" parameter? commenting out lets the model run
 ## I switched to a character vector in Parameters.txt that defines which of the available variables (currently coded in _targets.R) should be used
 ## some kind of issue with trying to get only one row with one density and one ss value from one state... lower priority but might be worth checking out
-	## pull in parameters
-	variable = parameters$input
 	## get the parameters with more than one value
 	variable_messy = parameters[which(lapply(parameters, length)>1)]
 	## filter out parameters that are supposed to have more than one value (or that have values connected to values of other parameters)
-	variable_messy = variable_messy[names(variable_messy) %in% c('out.opts', 'input',names(variable_messy)[grep('^B1',names(variable_messy))],'ss') == FALSE]
+	variable_messy = variable_messy[names(variable_messy) %in% c('out.opts', 'input',names(variable_messy)[grep('^B1',names(variable_messy))],'ss', 'mort_val_test') == FALSE]
 	## get all combinations
 	temptab <- expand.grid(variable_messy)
+    browser()
 	## build out table of parameters that are defined in sync, e.g. B1, density, ss with specific state
 	canonical.params <- data.frame(state = rep(parameters$state, each=length(parameters$density)),
 								density=rep(parameters$density, length(parameters$state)),
