@@ -31,6 +31,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     solocs.all <- as.data.table(out.list['solocs.all'])
     setnames(solocs.all, unlist(lapply(strsplit(names(solocs.all), 'solocs.all.'), function(x) unlist(x)[2])))
     setnames(solocs.all, c('x','y'), c('ctX','ctY'))
+    solocs.all[,nlive := S+E+I+R]
 
 
     # generate an image for environment quality grid
@@ -209,7 +210,8 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 #     )
 
     radius = parameters['Rad']
-    unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
+#     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
+    unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
     if (radius != 0){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
@@ -236,7 +238,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         setorder(unq.incidence, var, land, rep, timestep, loc)
 
         browser()
-
+#         unq.combos <- unq.combos[var == 7 & rep == 2,]
         mapply(function(i, j, k){
             sub.incidence <- unique(unq.incidence[var == i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
             sub.detections <- unique(unq.detections[var == i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
@@ -257,18 +259,30 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
             library(animation)
             plot.step <- function(x){
-                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100), main=paste('week', x))
+#         browser()
+                panels <- layout(matrix(c(1,1,1,2,3,4), nrow=3,ncol=2), widths=c(3,1), heights=c(1,1,1), respect=FALSE)
+                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100), main=paste('week', x), cex=log1p(sub.solocs[timestep==x, nlive]))
                 points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch=3, col='yellow')
 #                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
                 if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
+                plot(allnlive ~ timestep, data=sub.solocs[, allnlive := sum(nlive), by=timestep][order(timestep)], main='Live pigs', type='l')
+                points(allnlive ~ timestep, data=sub.solocs[timestep==x,], pch=1, cex=2)
+                plot(allnlive ~ timestep, data=unique(sub.incidence[, allnlive := sum(is.inf), by=timestep][,.(timestep, allnlive)])[order(timestep)], main='Infected cells', type='l', col='red')
+                points(allnlive ~ timestep, data=sub.incidence[timestep==x,], pch=3, col=2, cex=2)
+                if (nrow(sub.detections) > 0){
+                    temp.detect <- unique(sub.detections[, allnlive := length(unique(loc)), by=timestep][,.(timestep, allnlive)])[order(timestep)][,cs:=cumsum(allnlive)]
+                    plot(cs ~ timestep, data=temp.detect, main='Detections', type='l', col='blue')
+                    points(cs ~ timestep, data=temp.detect[timestep==x, ], pch=2, col='blue', cex=2)
+                }
             }
+#             lapply(seq(min(sub.incidence[,timestep]), max(sub.incidence[,timestep])), plot.step)
             out.gif <- paste0('testgif',i,j,k,'.gif')
             saveGIF({
 #                 lapply(seq(parameters$burn_weeks, max(sub.incidence[,timestep])), plot.step)
-                lapply(seq(max(sub.incidence[,timestep])), plot.step)
-#                 lapply(seq(min(sub.incidence[,timestep]), max(sub.incidence[,timestep])), plot.step)
-            }, movie.name = out.gif, ani.width=600, ani.height=600, interval=0.1, imgdir='./test_outputs')
+#                 lapply(seq(max(sub.solocs[,timestep])), plot.step)
+                lapply(seq(min(sub.incidence[,timestep]) - 10, max(sub.incidence[,timestep])), plot.step)
+            }, movie.name = out.gif, ani.width=850, ani.height=600, interval=0.1, imgdir='./test_outputs')
         }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 
         #lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))

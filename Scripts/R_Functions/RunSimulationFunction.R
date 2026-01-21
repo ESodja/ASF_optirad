@@ -19,7 +19,14 @@
 RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps, burn.list){
 
     # Pull values from burn-in for mort_val parameter
-    variables$mort_val <- unlist(burn.list[18,])
+    burn.vars <- as.data.table(matrix(as.numeric(unlist(burn.list[18,])), nrow=length(burn.list[18,]), byrow=TRUE))
+    burn.vars[,2] <- as.data.table(matrix(unlist(burn.list[18,]), nrow=length(burn.list[18,]), byrow=TRUE))[,2]
+    colnames(burn.vars) <- c(names(burn.list[18,][[1]]))
+    setnames(burn.vars, ncol(burn.vars), 'mort_val')
+
+    names(variables)[names(variables) == "density"] <- "dens"
+
+    variables <- as.data.table(variables)[burn.vars, on=.NATURAL]
 
     # Filter variables (parameters with >1 value) out of parameters
     ## selecting variables is done in SetVarParms.R
@@ -38,7 +45,6 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     rep.list <- mapply(function(v.val, l.val, r.val, i.val){
 
         vars <- variables[v.val,]
-        names(vars)[names(vars) == "density"] <- "dens"
         vars <- as.list(vars)
         list2env(vars, .GlobalEnv)
 

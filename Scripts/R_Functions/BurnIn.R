@@ -18,12 +18,15 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     i <- 0
     ## need to base condition on population stability, e.g. when density for the last several timesteps varies by less than some given amount
     ## which means we need to measure density throughout...
+    pop.list <- sum(pop[,1])
+    pop.var <- 99
     dens.list <- c(sum(pop[,1])/(nrow(centroids) * inc^2))
     dens.var <- 99
     dens.mean <- 1
 
 #     while(i < burn_weeks){
-    while((i < 25 | dens.var > 0.05 | abs(dens.mean-dens) > 0.01) & i < burn_weeks){
+    while((i < 25 | dens.var > 0.05 | abs(dens.mean-dens) > 0.1) & i < burn_weeks){
+#     while((i < 25 | dens.var > 0.05 | pop.var > 0.05 | abs(dens.mean-dens) > 0.01) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))
@@ -88,6 +91,9 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
         pigcols <- c(1, 8:13)
         pop <- pop[which(rowSums(pop[, pigcols, drop=FALSE]) != 0),, drop=FALSE]
 
+        pop.list <- c(pop.list, sum(pop[,1]))
+        pop.recent <- pop.list[max(1, (length(pop.list)-10)):length(dens.list)]
+        pop.var <- var(pop.recent)
         dens.list <- c(dens.list, sum(pop[,1])/(nrow(centroids) * inc^2))
         dens.recent <- dens.list[max(1,(length(dens.list)-10)):length(dens.list)]
         dens.var <- var(dens.recent)

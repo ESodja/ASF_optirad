@@ -16,6 +16,14 @@ RunBurnIn <- function(land_grid_list, parameters, variables, cpp_functions){
     #1, loop through all landscapes
     #2, loop through all parameter settings
 
+    # clean out variables that only affect detection and/or culling, because they affect nothing on this part of the model
+    cull.params.vars <- c('Rad','Intensity','cullstyle','alphaC','sample','DetP','detectday')
+    if(length(which(names(variables) %in% cull.params.vars)) > 0){
+        setDT(variables)
+        cull.vars.i <- cull.params.vars[which(cull.params.vars %in% names(variables))]
+        variables <- unique(variables[,-..cull.vars.i])
+    }
+
     vl.list <- expand.grid(v = 1:nrow(variables), l = 1:length(land_grid_list))
     burn.out <- mapply(function(v, l){
 #     for(v in 1:nrow(variables)){
@@ -63,7 +71,7 @@ RunBurnIn <- function(land_grid_list, parameters, variables, cpp_functions){
 #         rep.out <- rep_outputs(out.burn, v, l, 0, parameters, out.opts)
 #         rep.out[[6]] <- cbind(v, l, out.burn$pop)
 #         rep.out[[7]] <- parameters$mort_val
-        out.burn <- append(out.burn, parameters$mort_val)
+        out.burn <- append(out.burn, list(append(vars, parameters$mort_val)))
         return(out.burn)
     },
     v = vl.list[,1],

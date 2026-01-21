@@ -18,11 +18,16 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
     i <- 0
     ## need to base condition on population stability, e.g. when density for the last several timesteps varies by less than some given amount
     ## which means we need to measure density throughout...
+    pop.list <- sum(pop[,1])
+    pop.var <- 99
     dens.list <- c(sum(pop[,1])/(nrow(centroids) * inc^2))
     dens.var <- 99
+    pop.recent <- c(1,1)
 
 #     while(i < burn_weeks){
-    while((i < 25 | dens.var > 0.05) & i < burn_weeks){
+    while((i < 25 | dens.var > 0.05 ) & i < burn_weeks){
+#     while((i < 25 | dens.var > 0.05 | (diff(range(pop.recent))/max(pop.recent)) > 0.1 ) & i < burn_weeks){
+#     while((i < 25 | dens.var > 0.05 | pop.var > 1000) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))
@@ -49,7 +54,6 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
 ######## State Changes ########
 #births, natural deaths, disease state changes (exposure, infection, recovery, death), carcass decay
 
-        print(dim(pop))
         st.list <- StateChanges(pop, centroids, nrow(centroids), parameters, Incidence, BB, i)
 
         Eep_mat[i,] <- st.list$Eep
@@ -87,13 +91,19 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
         pigcols <- c(1, 8:13)
         pop <- pop[which(rowSums(pop[, pigcols, drop=FALSE]) != 0),, drop=FALSE]
 
+        pop.list <- c(pop.list, sum(pop[,1]))
+        pop.recent <- pop.list[max(1, (length(pop.list)-10)):length(dens.list)]
+        pop.var <- var(pop.recent)
         dens.list <- c(dens.list, sum(pop[,1])/(nrow(centroids) * inc^2))
         dens.recent <- dens.list[max(1,(length(dens.list)-10)):length(dens.list)]
         dens.var <- var(dens.recent)
+        print(paste('pop variance', pop.var))
+        print(paste('dens variance', dens.var))
     } # end while loop of timesteps
     dens.mean <- mean(dens.recent)
 
     print('finish')
+#     browser()
 
     input.opts <- vector(mode="list", length=1)
     input.opts[[1]] <- out.opts
