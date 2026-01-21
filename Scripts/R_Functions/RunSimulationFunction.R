@@ -85,11 +85,12 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
     tm.mat <- rbindlist(rep.list[1,])
     summ.vals <- rbindlist(lapply(rep.list[2,], as.data.table))
-    incidence <- rbindlist(rep.list[3,])
+    incidence <- rbindlist(rep.list[3,which(lapply(rep.list[3,], ncol) > 1)])
     detections <- rbindlist(lapply(rep.list[4,][!is.na(rep.list[4,])], as.data.table))
     allzone <- rbindlist(lapply(rep.list[5,][!is.na(rep.list[5,])], as.data.table))
+    solocs.all <- rbindlist(rep.list[6,])
 
-    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone))
+    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone, 'solocs.all' = solocs.all))
 }
 
 

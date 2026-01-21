@@ -22,7 +22,7 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
     dens.var <- 99
 
 #     while(i < burn_weeks){
-    while((i < 10 | dens.var > 0.1) & i < burn_weeks){
+    while((i < 25 | dens.var > 0.05) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))

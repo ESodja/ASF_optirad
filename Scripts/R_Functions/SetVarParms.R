@@ -11,7 +11,6 @@ SetVarParms<-function(parameters){
 	variable_messy = variable_messy[names(variable_messy) %in% c('out.opts', 'input',names(variable_messy)[grep('^B1',names(variable_messy))],'ss', 'mort_val_test') == FALSE]
 	## get all combinations
 	temptab <- expand.grid(variable_messy)
-    browser()
 	## build out table of parameters that are defined in sync, e.g. B1, density, ss with specific state
 	canonical.params <- data.frame(state = rep(parameters$state, each=length(parameters$density)),
 								density=rep(parameters$density, length(parameters$state)),
