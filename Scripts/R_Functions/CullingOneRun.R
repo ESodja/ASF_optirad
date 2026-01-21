@@ -142,7 +142,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
             fullZONEpigs[,cell.total := S+E+I+R+C+Z]
             fullZONEpigs[,cprob := 1 - 1/((1 + ..alphaC)^(cell.total/(..inc^2)))]
             norm.val <- TwoDt(0, 3, Rad/2)
-            fullZONEpigs[,dist.weight := 0.5*TwoDt(dist, 3, ..Rad/2)/..norm.val]
+            fullZONEpigs[,dist.weight := TwoDt(dist, 3, ..Rad/2)/..norm.val]
         #     fullZONEpigs <- cbind(fullZONEpigs, prob.cull = Intensity*TwoDt(fullZONEpigs[,'dist'], 3, Rad/2)/norm.val)
 #             fullZONEpigs <- cbind(fullZONEpigs, cprob, dist.weight, rowSums(fullZONEpigs[,4:9]))
 #             names(fullZONEpigs)[ncol(fullZONEpigs)] <- 'cell.total'
@@ -150,7 +150,19 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
             fullZONEpigs[,cull.cell := rbinom(nrow(fullZONEpigs), cell.total, cprob * dist.weight)]
             setorder(fullZONEpigs, dist, -cell.total)
             fullZONEpigs[cull.cell > 0,cum.cull := round(cumsum(cell.total)/fullZONEpigs[,sum(cell.total)],2)]
-            fullZONEpigs[cull.cell > 0 & cum.cull <= 0.05, actual.cull := 1]
+            # if the cumulative proportion of culling starting from the center hits the target 0.05 exactly, stick with that
+            if (any(fullZONEpigs[,cum.cull] == 0.05, na.rm=TRUE)){
+                target.value <- 0.05
+            } else if (max(fullZONEpigs[,cum.cull], na.rm=TRUE) < 0.05){
+                # if the cumulative proportion of culling doesn't reach 0.05, just take everything marked for culling by cull.cell
+                target.value <- max(fullZONEpigs[,cum.cull], na.rm=TRUE)
+            } else {
+                # if the cumulative culling proprotion goes above 0.05 and no cell lands it exactly at 0.05, take up to the first cell that pushes
+                # the cumulative culling proportion above 0.05
+                target.value <- fullZONEpigs[cum.cull > 0.05,][1,cum.cull]
+            }
+            # mark the selected cells for culling
+            fullZONEpigs[cull.cell > 0 & cum.cull <= target.value, actual.cull := 1]
 		}
 	#     fullZONEpigs<-fullZONEpigs[complete.cases(fullZONEpigs),,drop=FALSE] ## probably don't need this unless bugs are making NA's somewhere
 
@@ -191,7 +203,6 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 # 		fullZONEpigs <- cbind(fullZONEpigs, cull.cell = rbinom(fullZONEpigs[,'prob.cull'], 1, fullZONEpigs[,'prob.cull']))
 		## Problem: No randomness in selection and bias toward higher? index numbers drifts detection to the south (or north, however plotted)
 		if (sum(fullZONEpigs[,actual.cull], na.rm=TRUE) > 0 & nrow(fullZONEpigs) > 0){
-            print('some culling and pigs in zone')
 			## use < instead of <= so if they hit cpigs exactly, they will stop there
 	#         cull.index <- c(1L, which(cumsum(fullZONEpigs[,4]) < cpigs) + 1L) ## go to the next row b/c that's when they would stop
 	#         cull.index <- cull.index[seq(min(length(cull.index), nrow(fullZONEpigs)))] ## handles cases with more culling than pigs

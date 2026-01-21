@@ -34,6 +34,7 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     ## seems like other things were supposed to happen in sounderlocsSummarize, if we want to use those this will have to change
     if ("sounderlocs" %in% out.opts){
         solocs.r <- sounderlocsSummarize(out.list$sounderlocs,r)[[1]]
+        solocs.all <- cbind(v, l, r, out.list$sounderlocs)
         tm.mat.r <- cbind(tm.mat.r[complete.cases(tm.mat.r),, drop=FALSE], solocs.r[3:8])
     }
 
@@ -78,19 +79,26 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
 
     } else {
         tm.mat <- rbind(tm.mat, tm.mat.r)
+        tm.mat <- tm.mat[!is.na(tm.mat[,1]),,drop=FALSE]
         summ.vals <- rbind(summ.vals, summ.vals.r)
-        if ("incidence" %in% out.opts) incidence <- rbind(incidence, incidence.r)
+        summ.vals <- summ.vals[!is.na(summ.vals[,1]),,drop=FALSE]
+        if ("incidence" %in% out.opts) {
+            incidence <- rbind(incidence, incidence.r)
+            incidence <- incidence[!is.na(incidence[,1]),,drop=FALSE]
+        }
         if (end.tm > (detectday+burntime) & "alldetections" %in% out.opts) {
             detections <- rbind(detections, detections.r)
+            detections <- detections[!is.na(detections[,1]),,drop=FALSE]
             if (is.null(nrow(allzone))) {
                 # if it hasn't been established yet
                 allzone <- allzone.r
             } else {
                 allzone <- rbind(allzone, allzone.r)
+                allzone <- allzone[!is.na(allzone[,1]),,drop=FALSE]
             }
             colnames(allzone) <- c('var','land','rep','timestep','loc')
         }
     }
 
-    return(list(tm.mat, summ.vals, incidence, detections, allzone))
+    return(list(tm.mat, summ.vals, incidence, detections, allzone, solocs.all))
 }

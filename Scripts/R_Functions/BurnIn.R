@@ -23,7 +23,7 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     dens.mean <- 1
 
 #     while(i < burn_weeks){
-    while((i < 10 | dens.var > 0.1 | abs(dens.mean-dens) > 0.05) & i < burn_weeks){
+    while((i < 25 | dens.var > 0.05 | abs(dens.mean-dens) > 0.01) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))

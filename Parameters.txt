@@ -225,8 +225,8 @@ density, or ss because these are associated (thus they should be the same length
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
-~ state = c("FL")
-state = c("FL","SC")
+state = c("FL")
+~ state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
 ~ B1__FL = c(0.9, 0.2)
@@ -267,7 +267,7 @@ ss = c(2, 4, 6)
 ~ mort_val = 10
 
 # mort_val_test is a range of values to calibrate the burin to get the value of mort_val that should be included to get the target density from the burn-in
-~ mort_val_test = c(5,15)
+~ mort_val_test = c(5,20)
 
 
 
