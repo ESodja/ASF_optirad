@@ -233,25 +233,25 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 		#POSlive_i is a matrix with a row for each timestep
 		#column one of poslive is the number of exposed/infected pigs detected at that timestep
 		#sum removalpigs column 6,7
-			POSlive_i <- sum(removalpigs[,7],removalpigs[,6])
+			POSlive_i <- sum(removalpigs[,5],removalpigs[,6])
 			if(!is.null(DetP) & DetP != 1){
 	#             POSlive_i_sel=rbinom(POSlive_i,1,DetP)
-				POSlive_i_sel <- rbinom(nrow(removalpigs),rowSums(removalpigs[,6:7]), DetP)
+				POSlive_i_sel <- rbinom(nrow(removalpigs),rowSums(removalpigs[,5:6]), DetP)
 				## this is used below to choose rows of removalpigs for where positive locs are, which isn't what POSlive_i_sel is actually counting
-				POSlive_i <- sum(removalpigs[POSlive_i_sel,6:7])
+				POSlive_i <- sum(removalpigs[POSlive_i_sel,5:6])
 			} else if(DetP == 1){
-				POSlive_i_sel <- as.numeric(which(rowSums(removalpigs[,6:7,drop=FALSE]) > 0))
+				POSlive_i_sel <- as.numeric(which(rowSums(removalpigs[,5:6,drop=FALSE]) > 0))
 			}
 		#POSdead
 		#POSdead is a matrix with a row for each timestep
 		#column one of poslive is the number of infected carcasses detected at that timestep
 		#sum removalpigs column 9
-			POSdead_i <- sum(removalpigs[,9])
+			POSdead_i <- sum(removalpigs[,8])
 			if(!is.null(DetP) & DetP != 1){
-				POSdead_i_sel <- rbinom(nrow(removalpigs), removalpigs[,9], DetP)
-				POSdead_i <- sum(removalpigs[POSdead_i_sel,9])
+				POSdead_i_sel <- rbinom(nrow(removalpigs), removalpigs[,8], DetP)
+				POSdead_i <- sum(removalpigs[POSdead_i_sel,8])
 			} else if (DetP==1){
-				POSdead_i_sel  <-  as.numeric(which(removalpigs[,9] > 0))
+				POSdead_i_sel  <-  as.numeric(which(removalpigs[,8] > 0))
 			}
 		#list of length thyme, each timestep is vector of grid cell locations where live infected pigs detected at that ts
 		#removalpigs col 2 where column 6 or 7 > 0
@@ -278,14 +278,14 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 
 			#vector of nrow timestop, count of total SR removed
 			#sum removalpigs column 5,8
-			NEGlive_i <- sum(removalpigs[,5],removalpigs[,8])
+			NEGlive_i <- sum(removalpigs[,4],removalpigs[,7])
 			if(!is.null(DetP) & DetP != 1){
 				NEGlive_i_missed <- length(POSlive_i_sel[POSlive_i_sel==0])
 				NEGlive_i <- NEGlive_i+NEGlive_i_missed
 			}
 			#vector of nrow timestep, count of total Z removed
 			#sum removalpigs column 10
-			NEGdead_i <- sum(removalpigs[,10])
+			NEGdead_i <- sum(removalpigs[,9])
 			if(!is.null(DetP) & DetP != 1){
 				NEGdead_i_missed <- length(POSdead_i_sel[POSdead_i_sel==0])
 				NEGdead_i <- NEGdead_i+NEGdead_i_missed
@@ -296,7 +296,6 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 			removedpop <- pop[-removalrows,,drop=FALSE]
 
 		} else{
-            ## this should never happen?
 			POSlive_i <- 0
 			POSdead_i <- 0
 			POSlive_locs_i <- NA
@@ -304,7 +303,6 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
 			NEGlive_i <- 0
 			NEGdead_i <- 0
 			culled <- 0
-# 			removedpop <- NA
 			Ct <- 0
 			removedpop <- pop
 		}
