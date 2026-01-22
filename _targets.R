@@ -21,8 +21,8 @@ library(geotargets)
 # portable, we rewrite it every time this pipeline is run (and we don't track
 # _targets.yaml with git)
 tar_config_set(
-  store = file.path(this.path::this.dir(),("_targets")),
-  script = file.path(this.path::this.dir(),("_targets.R"))
+    store = file.path(this.path::this.dir(),("_targets")),
+    script = file.path(this.path::this.dir(),("_targets.R"))
 )
 
 #Source functions in pipeline
@@ -55,52 +55,33 @@ tar_option_set(packages = c("Rcpp",
 
 list(
   
-  ## Input raw data files -----  
+    ## Input raw data files -----
 
-  ### Input parameters file: -----------
-  tar_target(parameters_txt,
-             file.path("Parameters.txt"),
-             format="file"),
-  
-  ### Input landscapes directory: -----------
-  tar_target(lands_path,
-             file.path("Input","lands"),
-             format="file"),
-  
-  ### Input landscape predictions: -----------
-  tar_target(landmat_path,
-             file.path("Input","ldsel.rds"),
-             format="file"),
-  
-  ## Read and format input data -----  
-  tar_terra_sprc(plands_sprc, ReadLands(lands_path)), 
-  tar_target(landmat,ReadRDS(landmat_path)),
-  
-  ### Read and format parameters file: -----------
-  tar_target(parameters0,FormatSetParameters(parameters_txt)),
+    ### Input parameters file: -----------
+    tar_target(parameters_txt, file.path("Parameters.txt"), format="file"),
 
-  tar_target(
-# tar_force(
-  variables,SetVarParms(parameters0)
-),
-    tar_target(parameters00,RemoveRedundantParms(parameters0)),
+    ### Input landscapes directory: -----------
+    tar_target(lands_path, file.path("Input","lands"), format="file"),
 
-  ## Input cpp scripts as files to enable tracking -----  
-  tar_target(Fast_FOI_Matrix_script,
-            file.path("Scripts","cpp_Functions","Fast_FOI_Matrix.cpp"),
-            format="file"),
-  tar_target(FindCellfromCentroid_script,
-             file.path("Scripts","cpp_Functions","FindCellfromCentroid.cpp"),
-             format="file"),
-  tar_target(Movement_Fast_Generalized_script,
-             file.path("Scripts","cpp_Functions","Movement_Fast_Generalized.cpp"),
-             format="file"),
-  tar_target(Movement_Fast_RSFavail_script,
-             file.path("Scripts","cpp_Functions","Movement_Fast_RSFavail.cpp"),
-             format="file"),
-  tar_target(SpatialZones_fast_script,
-             file.path("Scripts","cpp_Functions","SpatialZones_fast.cpp"),
-             format="file"),
+    ### Input landscape predictions: -----------
+#     tar_target(landmat_path, file.path("Input","ldsel.rds"), format="file"), ## unused
+
+    ## Read and format input data -----
+    tar_terra_sprc(plands_sprc, ReadLands(lands_path)),
+#     tar_target(landmat, ReadRDS(landmat_path)), ## unused
+
+    ### Read and format parameters file: -----------
+    tar_target(parameters0, FormatSetParameters(parameters_txt)),
+
+    tar_target(variables, SetVarParms(parameters0)),
+    tar_target(parameters00, RemoveRedundantParms(parameters0)),
+
+    ## Input cpp scripts as files to enable tracking -----
+    tar_target(Fast_FOI_Matrix_script, file.path("Scripts","cpp_Functions","Fast_FOI_Matrix.cpp"), format="file"),
+    tar_target(FindCellfromCentroid_script, file.path("Scripts","cpp_Functions","FindCellfromCentroid.cpp"), format="file"),
+    tar_target(Movement_Fast_Generalized_script, file.path("Scripts","cpp_Functions","Movement_Fast_Generalized.cpp"), format="file"),
+    tar_target(Movement_Fast_RSFavail_script, file.path("Scripts","cpp_Functions","Movement_Fast_RSFavail.cpp"), format="file"),
+    tar_target(SpatialZones_fast_script, file.path("Scripts","cpp_Functions","SpatialZones_fast.cpp"), format="file"),
   
   ## Initialize surface -----
   ### Initialize grid(s): ---------------
@@ -128,7 +109,7 @@ list(
     tar_target(land_grid_list, {if (parameters00$pop_init_grid_opts == 'homogeneous'){
                                   if(parameters00$grid.opts != 'ras'){ ## if grid.opts is homogeneous or heterogeneous
                                     ## make a grid either uniform or random with even initial pig locations
-                                    InitializeGrids(c(parameters00$len,parameters00$inc),parameters00$grid.opt)
+                                    InitializeGrids(c(parameters00$len, parameters00$inc), parameters00$grid.opt)
                                   } else if (parameters00$grid.opts == 'ras'){ ## if there is an input raster
                                     InitializeGrids(plands_sprc, parameters00$grid.opts)
                                   }
@@ -139,7 +120,7 @@ list(
                                       stop('Cannot run homogeneous grid.opts with heterogeneous pop_init_grid_opts')
                                     } else if (parameters00$grid.opts == 'heterogeneous'){
                                       ## random pig distribution with random landscape
-                                      InitializeGrids(c(parameters00$len,parameters00$inc),parameters00$grid.opt)
+                                      InitializeGrids(c(parameters00$len, parameters00$inc), parameters00$grid.opt)
                                     } else if (parameters00$grid.opts == 'ras'){
                                       ## random pig distribution with raster landscape
                                       InitializeGrids(plands_sprc, parameters00$grid.opts)
@@ -158,12 +139,13 @@ list(
                     cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
         )
     ),
+    ## lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source); RunBurnIn(tar_Read(land_grid_list), tar_read(parameters), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)))
 
   ## Run Model ---------------
   #Use tar_force format here because otherwise will only run if code has been updated
 #   tar_force(
     tar_target(out.list,
-      RunSimulationReplicates(land_grid_list = land_grid_list,
+        RunSimulationReplicates(land_grid_list = land_grid_list,
                                 parameters = parameters,
                                 variables = variables,
                                 cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script),
@@ -176,15 +158,10 @@ list(
       ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(burn.list)) }
 
 
-#     tar_force(
-    tar_target(
-      plot_outputs,
-      VisualOutputs(out.list, variables, land_grid_list, parameters00)
-#       ,force=TRUE
-    )
+    tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters00))
       ## {source('./Scripts/R_functions/VisualOutputs.R') ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters00)) }
 
 
-  )
+) # end targets list
 
 

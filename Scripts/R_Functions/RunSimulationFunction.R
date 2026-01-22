@@ -19,7 +19,14 @@
 RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps, burn.list){
 
     # Pull values from burn-in for mort_val parameter
-    variables$mort_val <- unlist(burn.list[18,])
+    burn.vars <- as.data.table(matrix(as.numeric(unlist(burn.list[18,])), nrow=length(burn.list[18,]), byrow=TRUE))
+    burn.vars[,2] <- as.data.table(matrix(unlist(burn.list[18,]), nrow=length(burn.list[18,]), byrow=TRUE))[,2]
+    colnames(burn.vars) <- c(names(burn.list[18,][[1]]))
+    setnames(burn.vars, ncol(burn.vars), 'mort_val')
+
+    names(variables)[names(variables) == "density"] <- "dens"
+
+    variables <- as.data.table(variables)[burn.vars, on=.NATURAL]
 
     # Filter variables (parameters with >1 value) out of parameters
     ## selecting variables is done in SetVarParms.R
@@ -33,12 +40,11 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
     # looping table for mapply
     lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep=seq(reps))
-    lvtable$iterate <- rep(seq(max(c(lvtable[,1], lvtable[,2]))), max(lvtable[,3]))
+    lvtable$iterate <- rep(seq(nrow(burn.vars)))
 
     rep.list <- mapply(function(v.val, l.val, r.val, i.val){
 
         vars <- variables[v.val,]
-        names(vars)[names(vars) == "density"] <- "dens"
         vars <- as.list(vars)
         list2env(vars, .GlobalEnv)
 
@@ -48,7 +54,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
         burn.input <- burn.list[,i.val]
 
-        burn.times <- unlist(burn.list[17,])
+#         burn.times <- unlist(burn.list[17,])
         #loop through landscapes
         centroids <- land_grid_list[[l.val]]$centroids
         grid <- land_grid_list[[l.val]]$grid
@@ -75,6 +81,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
         # each rep starts in the same post burn-in condition
 
+#     browser()
         #Do simulations
         out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r.val, burn.time.vl)
         #Handle outputs

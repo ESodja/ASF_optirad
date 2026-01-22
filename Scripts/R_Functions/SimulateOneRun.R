@@ -300,6 +300,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 #     }
 
     list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday+burn.end, Ct, out.opts, input.opts, burn.end=burn.end)
+
 ## want the end time as output to trim matrices
     list.all <- append(list.all, i)
     names(list.all)[length(list.all)] <- 'endtime'
