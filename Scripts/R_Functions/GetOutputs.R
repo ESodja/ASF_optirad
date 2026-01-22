@@ -25,7 +25,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
     ##############################
     ### Summarize main outputs ###
     ##############################
-
+tstart <- Sys.time()
     #Tinc, this just sums all of the exposures
     Tinc <- sum(Incidence)
 
@@ -44,7 +44,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
         IConDD <- 0
         ICatEnd <- 0
     }
-
+print(paste('pt1', Sys.time()-tstart))
     #Find max spread of infection
     Mspread <- max(out[,2])
 
@@ -63,6 +63,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
     ############################
     ### Compile main outputs ###
     ############################
+print(paste('pt2', Sys.time()-tstart))
 
     #send all main outputs to list
     list.all = list("Tinc" = Tinc,
@@ -88,10 +89,15 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
     #convert loc.list into dataframe
 
     if("sounderlocs" %in% out.opts){
+print(paste('pt2a', Sys.time()-tstart))
         loc.list <- input.opts$loc.list
+print(paste('pt2b', Sys.time()-tstart))
         input.rng <- 1:length(loc.list)
+print(paste('pt2c', Sys.time()-tstart))
         locs.df <- data.table()
 
+print(paste('pt2d', Sys.time()-tstart))
+    ## THIS BIT IS SUPER SLOW
         for(i in input.rng){
             if(length(loc.list[[i]]) != 0){
                 locs.i <- as.data.table(centroids[matrix(loc.list[[i]], ncol=7)[,1], , drop=FALSE])
@@ -110,6 +116,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
         }
     }
 
+print(paste('pt3', Sys.time()-tstart))
     #Get POSlive, dead, and all locs in datafame format from list
     if("alldetections" %in% out.opts){
         #all should be same length, thyme
@@ -142,6 +149,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
             detections <- rbind(detections, detections.i)
         }
 
+print(paste('pt4', Sys.time()-tstart))
         # Now, outside of the loop, check if sample == 1 to combine live detections with sampled pigs
         if (sample == 1) {
             # Get the sampled pigs for the timestep
@@ -169,6 +177,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
 
     #############################################################
 
+print(paste('pt5', Sys.time()-tstart))
     ###############################
     ### Append optional outputs ###
     ###############################
@@ -211,6 +220,7 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
     ### Return final output ###
     ###########################
 
+print(paste('pt6', Sys.time()-tstart))
     return(list.all)
 
 }

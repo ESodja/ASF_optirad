@@ -165,8 +165,8 @@ pop_init_grid_opts = "homogeneous"
 * Intensity = 0.05, proportion of population targeted for removal per day based on capabilities
 
 ~ alphaC = 1.1
-~ Rad = 5
-Rad = c(10,20)
+Rad = 5
+~ Rad = c(10,20)
 ~ cullstyle = "startIN"
 cullstyle = "startOUT"
 ~ Intensity = 0.05
@@ -225,8 +225,8 @@ density, or ss because these are associated (thus they should be the same length
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
-state = c("FL")
-~ state = c("FL","SC")
+~ state = c("FL")
+state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
 ~ B1__FL = c(0.9, 0.2)
@@ -261,7 +261,7 @@ ss = c(2, 4, 6)
 		)
 
 
-~ burn_weeks = 50
+~ burn_weeks = 200
 
 # mort_val is the parameter that controls where the inflection point of the mortality for pigs lies, i.e. mortality within a sounder (as yet not in the cell, but maybe soon) is much higher once the sounder size passes mort_val; this will be adjusted to identify what values give target densities at the end of a burn in period not to exceed burn_weeks above
 ~ mort_val = 10

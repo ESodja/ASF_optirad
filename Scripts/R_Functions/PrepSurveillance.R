@@ -31,14 +31,14 @@ PrepSurveillance<-function(sampling){
   # Read sampling file
   sample.design <- read.csv("sampling_scheme.csv")
 
-    ### for testing with minimal data
-  sample.design2 <- data.frame(FiscalYearCollection = runif(min(sample.design$FiscalYearCollection),max(sample.design$FiscalYearCollection), 250),
-                               Lat = runif(min(sample.design$Lat), max(sample.design$Lat), 250),
-                               Lon = runif(min(sample.design$Lon), max(sample.design$Lon), 250),
-                               Quantity = rpois(250, 5),
-                               Acres = rpois(250, 500)
-                               )
-  sample.design = rbind(sample.design, sample.design2)
+#     ### for testing with minimal data
+#   sample.design2 <- data.frame(FiscalYearCollection = runif(min(sample.design$FiscalYearCollection),max(sample.design$FiscalYearCollection), 250),
+#                                Lat = runif(min(sample.design$Lat), max(sample.design$Lat), 250),
+#                                Lon = runif(min(sample.design$Lon), max(sample.design$Lon), 250),
+#                                Quantity = rpois(250, 5),
+#                                Acres = rpois(250, 500)
+#                                )
+#   sample.design = rbind(sample.design, sample.design2)
 
 
   # Aggregate by week and store weeks to be sampled in variable

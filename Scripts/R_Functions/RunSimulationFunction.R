@@ -40,7 +40,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
     # looping table for mapply
     lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep=seq(reps))
-    lvtable$iterate <- rep(seq(max(c(lvtable[,1], lvtable[,2]))), max(lvtable[,3]))
+    lvtable$iterate <- rep(seq(nrow(burn.vars)))
 
     rep.list <- mapply(function(v.val, l.val, r.val, i.val){
 
@@ -54,7 +54,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
         burn.input <- burn.list[,i.val]
 
-        burn.times <- unlist(burn.list[17,])
+#         burn.times <- unlist(burn.list[17,])
         #loop through landscapes
         centroids <- land_grid_list[[l.val]]$centroids
         grid <- land_grid_list[[l.val]]$grid
@@ -81,6 +81,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
         # each rep starts in the same post burn-in condition
 
+#     browser()
         #Do simulations
         out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r.val, burn.time.vl)
         #Handle outputs
