@@ -62,7 +62,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         N0=dens*area
         K=N0*1.5
 
-        burn.input <- burn.list[i.val]
+        burn.input <- burn.list[[i.val]]
 
 #         burn.times <- unlist(burn.list[17,])
         #loop through landscapes
@@ -70,24 +70,26 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         grid <- land_grid_list[[l.val]]$grid
 
 #             pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
-        pop <- as.matrix(burn.input[[i.val]][[1]][,-c(1,2)])
+        print(i.val)
+        browser()
+        pop <- as.matrix(burn.input[[1]][,-c(1,2)])
         pop <- InitializeInfection(pop, centroids, grid, parameters)
         outputs <- Initialize_Outputs(parameters)
-        outputs$BB <- burn.input[[i.val]][[2]]
+        outputs$BB <- burn.input[[2]]
 #         outputs$Incidence <- burn.input[[i.val]][[3]]
 #         outputs$Tculled <- burn.input[[i.val]][[4]]
 #         outputs$ICtrue <- burn.input[[i.val]][[5]]
 #         outputs$out <- burn.input[[i.val]][[6]]
 #         outputs$detectday <- burn.input[[i.val]][[7]]
 #         outputs$Ct <- burn.input[[i.val]][[8]]
-        outputs$loc.list <- burn.input[[i.val]][[3]]
+        outputs$loc.list <- burn.input[[3]]
 #         outputs$POSlive <- burn.input[[i.val]][[11]]
 #         outputs$POSdead <- burn.input[[i.val]][[12]]
 #         outputs$POSlive_locs <- burn.input[[i.val]][[13]]
 #         outputs$POSdead_locs <- burn.input[[i.val]][[14]]
 #         outputs$allzone <- burn.input[[i.val]][[15]]
 #         outputs$incidence <- cbind(matrix(NA, nrow=0, ncol=3), burn.input[[i.val]][[16]])
-        burn.time.vl <- burn.input[[i.val]][[4]]
+        burn.time.vl <- burn.input[[4]]
 
         # each rep starts in the same post burn-in condition
 

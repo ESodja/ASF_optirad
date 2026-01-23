@@ -35,7 +35,7 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     if ("sounderlocs" %in% out.opts){
         solocs.r <- sounderlocsSummarize(out.list$sounderlocs,r)[[1]]
         solocs.all <- cbind(v, l, r, out.list$sounderlocs)
-        tm.mat.r <- cbind(tm.mat.r[complete.cases(tm.mat.r),, drop=FALSE], solocs.r[3:8])
+        tm.mat.r <- cbind(tm.mat.r, solocs.r[3:8])
     }
 
     # detections (optional...)
