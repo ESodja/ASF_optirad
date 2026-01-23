@@ -53,6 +53,13 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         I_locs[[i]] <- pop[pop[, 10] > 0, 3]
         C_locs[[i]] <- pop[pop[, 12] > 0, 3]
 
+######## Sounder Split ########
+
+browser()
+        if (any(pop[,1] > ss)){
+            pop <- sounderSplit(pop, ss)
+        }
+
 ##########################
 ######## Movement ########
 ##########################

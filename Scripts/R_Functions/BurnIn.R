@@ -45,6 +45,13 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
         I_locs[[i]] <- 0
         C_locs[[i]] <- 0
 
+        ######## Sounder Split ########
+
+        if (any(pop[,1] > ss)){
+            pop <- sounderSplit(pop, ss)
+        }
+
+
 ######## Movement ########
 
         pop <- FastMovement(pop, centroids, shape, rate, inc, mv_pref)

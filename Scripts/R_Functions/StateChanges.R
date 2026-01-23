@@ -172,19 +172,22 @@ Pic=1-exp(-1/(rpois(cells,5)/7)) #transitions infected to either dead or recover
 ## the problem with this structure is you can have inter-dimensional swine-shifting as they spontaneously appear and disappear from the temporal plane
 
 ## density dependent death
-death=exp(-mort_val+((1+death)*rowSums(pop[,c(8:11)])))/(1+exp(-mort_val+((1+death)*rowSums(pop[,c(8:11)]))))
+pop.dens <- unique(as.data.table(pop)[,loc.dens := sum(.SD), .SDcols=c('S','E','I','R'), by=cell][,.(cell, loc.dens)])
+pop.dens[,death.prob := exp(-mort_val + ((1 + death) * loc.dens))/(1 + exp(-mort_val + ((1 + death) * loc.dens)))]
 ## when population is too high, top and bottom of the above function become Inf, leading to NaN values which cause errors in rbinom()
 ## to prevent errors, change NaN values to 1 because this is a probability
-death[is.nan(death)] <- 1
+# death[is.nan(death)] <- 1
+pop.dens[is.nan(death.prob), death.prob := 1]
+pop <- as.matrix(as.data.table(pop)[pop.dens, on=.NATURAL])
 #susceptible state changes
-Sdpd=rbinom(nrow(pop), pop[,8],death) ## death is given as a rate, not a probability?
+Sdpd=rbinom(nrow(pop), pop[,8], pop[,15]) ## death is given as a rate, not a probability?
 # Eep=rbinom(nrow(pop), pop[,8], Pse[pop[,3]]) ## generates NA when Pse has negative values; error when Pse has NA
 Eep=rbinom(nrow(pop), pop[,8] - Sdpd, Pse[pop[,3]])
 ## could suppress warnings (see fix above), would rather have an internally consistent probability function.
 ## Eep = rbinom(nrow(pop), pop[,8]-Sdpd, Pse[pop[,3]]) if we have death separate from birth (i.e. ditch logistic growth equation)
 
 #exposed state changes
-Edpd=rbinom(nrow(pop), pop[,9], death) ## exposed natural death
+Edpd=rbinom(nrow(pop), pop[,9], pop[,15]) ## exposed natural death
 # Iep=rbinom(nrow(pop), pop[,9], Pei[pop[,3]]) ## exposed -> infected
 Iep=rbinom(nrow(pop), pop[,9] - Edpd, Pei[pop[,3]]) ## exposed -> infected
 ## this is where the sequential calculations could help to avoid the negatives -- set order of events
@@ -212,7 +215,7 @@ Cep = pop[,10] - Rep ## assuming we are expecting all infecteds to die or recove
 ## suggest: Cep = pop[,10] - Rep
 
 #recovered state changes
-Rdpd=rbinom(nrow(pop),pop[,11],death) ## recovered -> natural death
+Rdpd=rbinom(nrow(pop),pop[,11], pop[,15]) ## recovered -> natural death
 
 
 #infected carcass state changes
@@ -308,6 +311,7 @@ pop[,1]=rowSums(pop[,8:11,drop=FALSE]) ## drop=FALSE to handle single row matrix
 
 ## eliminate anything where there are no pigs or carcasses at all
 pop <- pop[rowSums(pop[,8:13,drop=FALSE]) > 0,]
+pop <- pop[,1:13]
 
 return(list(pop,Incidence,BB,"Eep"=sum(Eep),"Sdpb"=sum(Sdpb),"Sdpd"=sum(Sdpd),"Iep"=sum(Iep),"Edp"=sum(Edpd),"Rep"=sum(Rep),"Cep"=sum(Cep),"Rdpd"=sum(Rdpd),"Ccd"=sum(Ccd),"Zcd"=sum(Zcd)))
 
