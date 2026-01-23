@@ -25,10 +25,10 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     dens.mean <- 1
 
 #     while(i < burn_weeks){
-    while((i < 25 | dens.var > 0.05 | abs(dens.mean-dens) > 0.1) & i < burn_weeks){
+    while((i < 5 | dens.var > 0.05 | abs(dens.mean-dens) > 0.1) & i < burn_weeks){
 #     while((i < 25 | dens.var > 0.05 | pop.var > 0.05 | abs(dens.mean-dens) > 0.01) & i < burn_weeks){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
-        print(paste0("timestep: ",i))
+        print(paste0("burnin timestep: ",i))
         print(colSums(pop[,8:13]))
 
         if("sounderlocs" %in% out.opts){
@@ -47,7 +47,7 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
 
         ######## Sounder Split ########
 
-        if (any(pop[,1] > ss)){
+        if (any(pop[,1] > 2*ss)){
             pop <- sounderSplit(pop, ss)
         }
 
@@ -161,7 +161,11 @@ BurnIn <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, 
     print('endburnin')
     ## these will be more useful to pass to the simulation as inputs
     pop <- cbind(v, l, pop)
-    return(list(pop, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, loc.list, POSlive, POSdead, POSlive_locs, POSdead_locs, allzone, inc.mat, i))
+#     browser()
+#     loc.list <- rbindlist(lapply(seq(loc.list[unlist(lapply(loc.list, function(y) !is.null(y)))]), function(x) as.data.table(loc.list[[x]])[,var:=v][,land:=l]))
+    return(list(pop, BB, #Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts,
+                loc.list, #POSlive, POSdead, POSlive_locs, POSdead_locs, allzone, inc.mat,
+                i))
 
 #     list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts, is.burn=TRUE)
 #

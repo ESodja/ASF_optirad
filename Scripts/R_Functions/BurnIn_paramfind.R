@@ -25,11 +25,11 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
     pop.recent <- c(1,1)
 
 #     while(i < burn_weeks){
-    while((i < 25 | dens.var > 0.05 ) & i < burn_weeks){
+    while((i < 5 | dens.var > 0.05 ) & i < burn_weeks){
 #     while((i < 25 | dens.var > 0.05 | (diff(range(pop.recent))/max(pop.recent)) > 0.1 ) & i < burn_weeks){
 #     while((i < 25 | dens.var > 0.05 | pop.var > 1000) & i < burn_weeks){
         i <- i+1
-        print(paste0("timestep: ",i))
+        print(paste0("mvparamfind timestep: ",i))
         print(colSums(pop[,8:13]))
 
 #         if("sounderlocs" %in% out.opts){
@@ -48,7 +48,7 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
 
 ######## Sounder Split ########
 
-        if (any(pop[,1] > ss)){
+        if (any(pop[,1] > 2*ss)){
             pop <- sounderSplit(pop, ss)
         }
 

@@ -55,8 +55,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 
 ######## Sounder Split ########
 
-browser()
-        if (any(pop[,1] > ss)){
+        if (any(pop[,1] > 2*ss)){
             pop <- sounderSplit(pop, ss)
         }
 
