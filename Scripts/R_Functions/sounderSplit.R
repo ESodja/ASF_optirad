@@ -12,15 +12,18 @@ sounderSplit <- function(pop, ss){
     # choose which sounders will split
     split.bin <- rbinom(split.prob, 1, split.prob)
     # split them roughly in half
-    if(sum(split.bin) == 0) browser()
-    split.size <- floor(pop[split.bin==1,8:11]/2)
-    # get a matrix of the new sounders
-    if(nrow(pop[split.bin==1,]) != nrow(split.size)) browser()
-    new.sounders <- cbind(pop[split.bin==1, 1:7], split.size, C=0, Z=0)
-    # subtract the departed sounders from the original sounders
-    pop[split.bin==1,8:11] <- pop[split.bin==1,8:11] - split.size
-    # add the new sounders to the modified original list
-    pop <- rbind(pop, new.sounders)
-    pop[,1] <- rowSums(pop[,8:11])
+    if(sum(split.bin) != 0) {
+        split.size <- floor(pop[split.bin==1, 8:11, drop=FALSE]/2)
+        # get a matrix of the new sounders
+#         print(split.size)
+#         print(pop[split.bin==1,])
+#         if(nrow(pop[split.bin==1,,drop=FALSE]) != nrow(split.size)) browser()
+        new.sounders <- cbind(pop[split.bin==1, 1:7, drop=FALSE], split.size, C=0, Z=0)
+        # subtract the departed sounders from the original sounders
+        pop[split.bin==1,8:11] <- pop[split.bin==1,8:11, drop=FALSE] - split.size
+        # add the new sounders to the modified original list
+        pop <- rbind(pop, new.sounders)
+        pop[,1] <- rowSums(pop[,8:11, drop=FALSE])
+    }
     return(pop)
 }

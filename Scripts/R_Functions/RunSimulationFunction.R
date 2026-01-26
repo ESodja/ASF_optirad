@@ -71,7 +71,6 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
 
 #             pop <- InitializeSounders(centroids, grid, c(N0, ss), pop_init_grid_opts)
         print(i.val)
-        browser()
         pop <- as.matrix(burn.input[[1]][,-c(1,2)])
         pop <- InitializeInfection(pop, centroids, grid, parameters)
         outputs <- Initialize_Outputs(parameters)

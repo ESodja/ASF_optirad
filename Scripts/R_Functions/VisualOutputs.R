@@ -1,5 +1,7 @@
 
 VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
+
+    land_grid_list <- land_grid_list[1]
     # Generates output plots for examples
     library(data.table)
 
@@ -32,6 +34,14 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     setnames(solocs.all, unlist(lapply(strsplit(names(solocs.all), 'solocs.all.'), function(x) unlist(x)[2])))
     setnames(solocs.all, c('x','y'), c('ctX','ctY'))
     solocs.all[,nlive := S+E+I+R]
+
+    browser()
+    tm.mat <- tm.mat[land==1,]
+    summ.vals <- summ.vals[land==1,]
+    incidence <- incidence[land==1,]
+    detections <- detections[land==1,]
+    allzones <- allzones[land==1,]
+    solocs.all <- solocs.all[l==1,]
 
 
     # generate an image for environment quality grid
@@ -211,7 +221,6 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     radius = parameters['Rad']
 #     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
-    unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
     if (radius != 0){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
@@ -236,6 +245,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         unq.incidence[,loc.min := NULL]
         unq.incidence[,loc.max := NULL]
         setorder(unq.incidence, var, land, rep, timestep, loc)
+        unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
 
         browser()
 #         unq.combos <- unq.combos[var == 7 & rep == 2,]

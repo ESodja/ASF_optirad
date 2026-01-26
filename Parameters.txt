@@ -133,8 +133,8 @@ These two parameters only need to be set if manually creating heterogeneous or h
 
 
 grid.opts = "homogeneous"
-~ grid.opts = "heterogeneous"
-grid.opts = "ras"
+grid.opts = "heterogeneous"
+~ grid.opts = "ras"
 pop_init_grid_opts = "homogeneous"
 ~ pop_init_grid_opts = "heterogeneous"
 
@@ -165,8 +165,8 @@ pop_init_grid_opts = "homogeneous"
 * Intensity = 0.05, proportion of population targeted for removal per day based on capabilities
 
 ~ alphaC = 1.1
-Rad = 5
-~ Rad = c(10,20)
+~ Rad = 5
+Rad = c(10,20)
 ~ cullstyle = "startIN"
 cullstyle = "startOUT"
 ~ Intensity = 0.05
