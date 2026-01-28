@@ -27,7 +27,7 @@ InitializeSounders<-function(centroids, grid, pop_init_args, pop_init_grid_opts=
         N0=pop_init_args[1]
         ss=pop_init_args[2]
     } else {
-    
+
         #for init_pop, init_args needs to be vector with init_locs, n
         if(pop_init_type=="init_single"){
             init_locs=pop_init_args[1]
@@ -39,7 +39,7 @@ InitializeSounders<-function(centroids, grid, pop_init_args, pop_init_grid_opts=
         } else {
             stop("Unrecognized population initialization type")
         }
-    
+
     }
 
   #Check grid input args

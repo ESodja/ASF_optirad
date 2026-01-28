@@ -38,6 +38,7 @@ FindMortVal <- function(land_grid_list, parameters, variables, cpp_functions){
         #calc vals based on variables
         N0=dens*area ## actually need this for initial sounder distribution
         K=N0*1.5
+        parameters$K <- K
 
         centroids <- land_grid_list[[l]]$centroids
         grid <- land_grid_list[[l]]$grid
@@ -47,9 +48,9 @@ FindMortVal <- function(land_grid_list, parameters, variables, cpp_functions){
 
         # Run a bunch of less-targeted burn-ins to estimate what mortality parameter values give target density
         ## can use a more intelligent algorithm to find this faster
-        mortparm <- lapply(seq(mort_val_test[1], mort_val_test[2], by=1), function(x) {
+        mortparm <- lapply(seq(mort_val_test[1], mort_val_test[2], length.out=10), function(x) {
             # temporarily change mortality parameter to test value x
-            parameters$mort_val <- x
+            parameters$death <- x
             # run a mini burn-in to get a range of densities corresponding to the mortality parameter value
             out.vals <- BurnIn_paramfind(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l)
             return(out.vals)
@@ -82,7 +83,7 @@ FindMortVal <- function(land_grid_list, parameters, variables, cpp_functions){
     )
 
     mv_found <- as.data.table(matrix(unlist(burn.out), ncol=3, byrow=TRUE))
-    setnames(mv_found, c('var','land','mort_val'))
+    setnames(mv_found, c('var','land','death'))
 
     ## right??
     variables <- cbind(variables, mv_found)

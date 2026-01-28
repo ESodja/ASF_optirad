@@ -74,7 +74,7 @@ list(
     ### Read and format parameters file: -----------
     tar_target(parameters0, FormatSetParameters(parameters_txt)),
 
-    tar_target(variables1, SetVarParms(parameters0)),
+    tar_target(variables, SetVarParms(parameters0)),
     tar_target(parameters00, RemoveRedundantParms(parameters0)),
 
     ## Input cpp scripts as files to enable tracking -----
@@ -133,26 +133,26 @@ list(
     tar_target(parameters, GetSurfaceParms(parameters00, plands_sprc[1])),
 
     ## Find Mortality parameter value that gives target density:
-    tar_target(variables,
-        FindMortVal(land_grid_list = land_grid_list,
-                    parameters = parameters,
-                    variables = variables1,
-                    cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
-        )
-#         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
-    ),
+#     tar_target(variables,
+#         FindMortVal(land_grid_list = land_grid_list,
+#                     parameters = parameters,
+#                     variables = variables1,
+#                     cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
+#         )
+# #         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
+#     ),
     ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
     ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source); FindMortVal(tar_read(land_grid_list), tar_read(parameters), tar_read(variables1), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)))}
 
     ## Run Burn-In:
-    tar_target(burn.list,
-        RunBurnIn(land_grid_list = land_grid_list,
-                    parameters = parameters,
-                    variables = variables,
-                    cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
-        )
-#         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
-    ),
+#     tar_target(burn.list,
+#         RunBurnIn(land_grid_list = land_grid_list,
+#                     parameters = parameters,
+#                     variables = variables,
+#                     cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
+#         )
+# #         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
+#     ),
     ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
     ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source); RunBurnIn(tar_read(land_grid_list), tar_read(parameters), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)))}
 
@@ -162,13 +162,13 @@ list(
                                 parameters = parameters,
                                 variables = variables,
                                 cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script),
-                                reps = parameters$nrep,
-                                burn.list = burn.list
+                                reps = parameters$nrep#,
+#                                 burn.list = burn.list
         )
 #         , cue = tar_cue(seed = FALSE) # allows existing simulation outputs to stand despite having stochastic elements, so long as inputs are the same
     ),
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(burn.list)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)}#, tar_read(burn.list)) }
 
 
     tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters00))

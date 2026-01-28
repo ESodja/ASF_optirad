@@ -1,7 +1,6 @@
 
 VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
-    land_grid_list <- land_grid_list[1]
     # Generates output plots for examples
     library(data.table)
 
@@ -35,20 +34,15 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     setnames(solocs.all, c('x','y'), c('ctX','ctY'))
     solocs.all[,nlive := S+E+I+R]
 
-    browser()
-    tm.mat <- tm.mat[land==1,]
-    summ.vals <- summ.vals[land==1,]
-    incidence <- incidence[land==1,]
-    detections <- detections[land==1,]
-    allzones <- allzones[land==1,]
-    solocs.all <- solocs.all[l==1,]
-
 
     # generate an image for environment quality grid
     ## only works for single grid in land_grid_list
-    grid.key = as.data.table(land_grid_list[[1]][[2]])
-    setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
-    grid.centers = grid.key[,.(cell, ctX, ctY, rasval)]
+    grid.centers.out <- rbindlist(lapply(seq(length(land_grid_list)), function(i){
+        grid.key = as.data.table(land_grid_list[[i]][[2]])
+        setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
+        grid.centers = cbind(grid.key[,.(cell, ctX, ctY, rasval)], land=i)
+        return(grid.centers)
+    }))
 
     ## get some plots of temporal data
     # time-based matrix outputs
@@ -120,12 +114,15 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     ## plots of the spatial data
     ### spatial habitat quality
-    png('./test_outputs/landscape.png')
-    rasvalmat <- as.matrix(dcast(grid.centers, ctX ~ ctY, value.var = c('rasval')))
-    plot(range(grid.centers[,ctX]), range(grid.centers[,ctY]), type='n')
-    ## will need to set cex for points to have even squares based on output plot size
-    points(ctY ~ ctX, data=grid.centers, col=terrain.colors(10, rev=TRUE)[grid.centers[,rasval*10]], pch=15)
-    dev.off()
+    lapply(seq(length(land_grid_list)), function(lnd){
+        png(paste0('./test_outputs/landscape_',lnd,'.png'))
+        rasvalmat <- as.matrix(dcast(grid.centers.out[land==lnd,], ctX ~ ctY, value.var = c('rasval')))
+        plot(range(grid.centers.out[land==lnd,ctX]), range(grid.centers.out[land==lnd,ctY]), type='n')
+        ## will need to set cex for points to have even squares based on output plot size
+        points(ctY ~ ctX, data=grid.centers.out[land==lnd,], col=terrain.colors(5, rev=TRUE)[grid.centers.out[land==lnd,rasval*10]], pch=15)
+        dev.off()
+    })
+    browser()
 
     ### timing and extent of incidence/detections
     # connect incidence with cell locations
@@ -247,15 +244,15 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         setorder(unq.incidence, var, land, rep, timestep, loc)
         unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
 
-        browser()
+#         browser()
 #         unq.combos <- unq.combos[var == 7 & rep == 2,]
         mapply(function(i, j, k){
-            sub.incidence <- unique(unq.incidence[var == i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
-            sub.detections <- unique(unq.detections[var == i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers, on=.(loc = cell), nomatch=NULL] # gets rid of code column
-            sub.zones <- allzones[var == i & land == j & rep == k & loc != 0,][grid.centers, on=.(loc=cell), nomatch=NULL]
+            sub.incidence <- unique(unq.incidence[var == i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers.out[land==j,], on=.(loc = cell), nomatch=NULL] # gets rid of code column
+            sub.detections <- unique(unq.detections[var == i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers.out[land==j,], on=.(loc = cell), nomatch=NULL] # gets rid of code column
+            sub.zones <- allzones[var == i & land == j & rep == k & loc != 0,][grid.centers.out[land==j,], on=.(loc=cell), nomatch=NULL]
             sub.solocs <- solocs.all[v == i & l == j & r == k,]
             paneldim <- ceiling(sqrt(max(sub.incidence[,timestep])))
-            png(paste0('./test_outputs/sptmplot_', i, j, k,'.png'), width=2000, height=2000)
+            png(paste0('./test_outputs/sptmplot_vars_', i,'_land_', j, '_rep_', k,'.png'), width=2000, height=2000)
             par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
             lapply(seq(max(sub.incidence[,timestep])), function(x){
                 plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100))
@@ -269,7 +266,6 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
             library(animation)
             plot.step <- function(x){
-#         browser()
                 panels <- layout(matrix(c(1,1,1,2,3,4), nrow=3,ncol=2), widths=c(3,1), heights=c(1,1,1), respect=FALSE)
                 plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100), main=paste('week', x), cex=log1p(sub.solocs[timestep==x, nlive]))
                 points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch=3, col='yellow')
@@ -286,15 +282,13 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                     points(cs ~ timestep, data=temp.detect[timestep==x, ], pch=2, col='blue', cex=2)
                 }
             }
-#             lapply(seq(min(sub.incidence[,timestep]), max(sub.incidence[,timestep])), plot.step)
-            out.gif <- paste0('testgif',i,j,k,'.gif')
+            out.gif <- paste0('testgif_vars_',i,'_land_',j,'_rep_',k,'.gif')
             saveGIF({
-#                 lapply(seq(parameters$burn_weeks, max(sub.incidence[,timestep])), plot.step)
-#                 lapply(seq(max(sub.solocs[,timestep])), plot.step)
-                lapply(seq(min(sub.incidence[,timestep]) - 10, max(sub.incidence[,timestep])), plot.step)
+                lapply(seq(min(sub.incidence[,timestep]), max(sub.incidence[,timestep])), plot.step)
             }, movie.name = out.gif, ani.width=850, ani.height=600, interval=0.1, imgdir='./test_outputs')
         }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 
+        # moves gifs to the proper folder
         #lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
     }
 }

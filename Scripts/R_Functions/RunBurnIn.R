@@ -64,7 +64,8 @@ RunBurnIn <- function(land_grid_list, parameters, variables, cpp_functions){
 # #             print(mortparm) stop('Target density outside of range estimate; use the above table to adjust the range of mort_val_test range')
 #         }
 
-        parameters$mort_val <- variables[v,'mort_val']$y
+#         browser()
+        parameters$death <- variables[v,'death']$y
 
         # Burn-in of pig population (similar to SimulateOneRun.R, but no infection)
         out.burn <- BurnIn(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l)

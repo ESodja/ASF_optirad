@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 52
+~ thyme = 78
 
 ############################
 #### Movement parameters ###
@@ -86,7 +86,7 @@ Originally, these were all pulled into model with 'ModelStateSwitch.R' by readin
 ~ F2i_int__SC = 9.82
 ~ F2i_B__SC = -4.11
 
-~ K = 1500
+K = 1500
 ## carrying capacity; currently hard-coded in RunSimulationFunction.R
 ## could go with K_factor = 1.5 or something like that
 
@@ -129,14 +129,16 @@ These two parameters only need to be set if manually creating heterogeneous or h
 	ras- use input raster to create grid
 	homogeneous- creates grid with 7 columns, no land class variables
     heterogeneous- creates a neutral random landscape model with land class values draw from uniform distribution and rescaled from 0 to 1. Note, if pop_init_grid_opts='heterogeneous', grid.opts MUST be something other than 'homogeneous' or InitializeSounders will throw an error.
-* pop_init_grid_opts = how to initialize sounders on the grid-- do it with biased preference according to lscape vals or just randomly
+* pop_init_grid_opts = how to initialize sounders on the grid-- do it with biased preference according to lscape vals or just randomly (if you use homogenous or ras, it is random; heterogeneous is according to landscape)
 
-
+Gets rewritten to heterogeneous if you put in a raster or enter raster here
 grid.opts = "homogeneous"
 grid.opts = "heterogeneous"
 ~ grid.opts = "ras"
 pop_init_grid_opts = "homogeneous"
 ~ pop_init_grid_opts = "heterogeneous"
+doesn't work, defaults to heterogeneous
+pop_init_grid_opts = "ras"
 
   
 #################################
@@ -190,8 +192,27 @@ cullstyle = "startOUT"
 * death, probability of natural death
 * Pbd, weekly birth rate
 
-~ death = 0.00639
-~ Pbd = 0.0192
+This translates to about 71% survival rate, but I can't find supporting information in the citation (Snow 2020 chapter), they say average survival is 0.56, up to 0.91, but I think the original parameter value here is based on a different value and probably dividied by 52 or 4 to get this. This is actually really high given that it is a background death rate on top of a logistic equation model of "reproductive rate" that is really a population growth rate model
+death = 0.00639
+### from matlab model: death = 7/(365*3);%Pbd*(1/1.5); % assume pop growth rate of 1.5 so make death rate = birth rate*(1/1.5); 1/(365*3); % natural death rate for S and R
+Using annual survival of 0.56, 1-0.56=1-(1-d_week)^52 -> d_week of 0.011 from Snow 2020 chapter 4
+~ death = 0.011
+
+Birth rate is probably not this... Based on fig 1 in mayer 2009 p 67 of 304 litters distribtuted thoughout a year, so the quackulation is 304/52 = 5.85 to get litters per week, and then 5.85 l/w /304 litters to get 0.0192 w^-1. But it ignores the underlying rate of reproduction, i.e. the plot is saying how many litters happened in which month (comception vs. the pig word for birth) but not how many total pigs were sampled, only how many litters. It works for seasonality (~10% of conceptions in January, for example) but NOT for birth rate.
+I would say, based on my reading, that we can assume ~1.5 litters per year (depending on environment... and age) given gestation of about 120 days (100-140, probably average closer to 115) and weaning at about 2 months (1-4 months range) we have a full reproductive cycle of about 180 days or 6 months, so maybe about 2 litters per year. Then litter size tends to be about 5, so we are looking at annual per-capita reproduction of 5 to 10 piglets per individual, depending on litters per year and survival. so I get a reproductive rate of 0.096 (1 litter of 5) to 0.192 (2 litters of 5) per reproductive female. that is a lot higher than the previously (and stupidly) assumed parameter originally estimated for this model.
+~ Pbd = 0.096
+Pbd = 0.0192
+From matlab model: % BIRTH PROBABILITY
+%conc = [32 18 15 15 4 15 8 35 65 52 22 23]; % Monthly data from SREL - describes conception seasonality
+conc = [81 31 23 28 26 18 15 12 5 14 11 40]; % Monthly data from SREL - describes birth seasonality
+c_time = []; % seasonal birth rate
+for iiii = 1:length(enddate)
+c_time = [c_time conc(iiii).*ones(1,enddate(iiii))];
+end
+c_time = c_time/sum(c_time);
+mc_time = mean(c_time); %mean daily conception probability
+%c_time = repmat(mean(c_time),1,365*5);
+
 
 #########################
 #### Output options #####
@@ -225,8 +246,8 @@ density, or ss because these are associated (thus they should be the same length
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
-~ state = c("FL")
-state = c("FL","SC")
+state = c("FL")
+~ state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
 ~ B1__FL = c(0.9, 0.2)
@@ -261,13 +282,10 @@ ss = c(2, 4, 6)
 		)
 
 
-~ burn_weeks = 10
-
-# mort_val is the parameter that controls where the inflection point of the mortality for pigs lies, i.e. mortality within a sounder (as yet not in the cell, but maybe soon) is much higher once the sounder size passes mort_val; this will be adjusted to identify what values give target densities at the end of a burn in period not to exceed burn_weeks above
-~ mort_val = 10
+~ burn_weeks = 100
 
 # mort_val_test is a range of values to calibrate the burin to get the value of mort_val that should be included to get the target density from the burn-in
-~ mort_val_test = c(5,20)
+~ mort_val_test = c(0.0001, 0.5)
 
 
 

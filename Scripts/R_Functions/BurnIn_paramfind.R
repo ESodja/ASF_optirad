@@ -165,7 +165,7 @@ BurnIn_paramfind <- function(outputs, pop, centroids, grid, parameters, cpp_func
 #     list.all <- append(list.all, i)
 #     names(list.all)[length(list.all)] <- 'endtime'
 
-    return(list(mort_val, dens.var, dens.mean))
+    return(list(death, dens.var, dens.mean))
     # mort_val is defined in input parameters as the value to be tested
     # dens.var gives an idea of how stable the population is at that level
     # dens.mean gives the output density for the tested mort_val
