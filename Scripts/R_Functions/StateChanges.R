@@ -15,11 +15,11 @@ Sdpb[,1]=0
 #natural deaths
 Sdpd<-matrix(nrow=nrow(pop),ncol=1)
 Edpd<-matrix(nrow=nrow(pop),ncol=1)
-Idpd<-matrix(nrow=nrow(pop),ncol=1)
+# Idpd<-matrix(nrow=nrow(pop),ncol=1)
 Rdpd<-matrix(nrow=nrow(pop),ncol=1)
 Sdpd[,1]=0
 Edpd[,1]=0
-Idpd[,1]=0
+# Idpd[,1]=0
 Rdpd[,1]=0
 
 #disease state change recording
@@ -53,7 +53,9 @@ liveind<-sum(colSums(pop)[c(8,9,11)])
 liverows<-which(pop[,8,drop=FALSE]>0|pop[,9,drop=FALSE]>0|pop[,11,drop=FALSE]>0) #rownums with live indiv
 
 #density-dependent birth rate
-# Brate=Pbd*liveind*(1-liveind/K) ## K is a parameter that may be good to tie to the environment
+# browser()
+Brate=Pbd*rowSums(pop[,c(8,9,11)])*(1-sum(pop[,c(8,9,11)])/K) ## K is a parameter that may be good to tie to the environment
+# Brate=Pbd*rowSums(pop[,c(8,9,11)])*(1-rowSums(pop[,C(8:11)])/(K/cells)) ## K is a parameter that may be good to tie to the environment
 ## I have questions about where the value of Pbd came from -- look up at some point...
 ## ALSO: technically the baseline growth rate in the logistic equation includes overall population growth, not just reproduction
 ## (i.e. you could replace Pbd with birth - death) meaning that the stochastic non-infected death rate below might be kind of redundant?
@@ -71,10 +73,12 @@ liverows<-which(pop[,8,drop=FALSE]>0|pop[,9,drop=FALSE]>0|pop[,11,drop=FALSE]>0)
 ## later in the infection for a given location; i.e. anywhere with only 1 or 2 pigs join the nearest group of >2 pigs in neighboring cells at random)
 ## young pigs also are supposed to respond differently to the virus than older pigs (read that somewhere), so spatiotemporal age dynamics might also be important
 ## i.e. if you have a bunch of piglets in one spot, they might all catch the virus but also quickly die
-reprod.fem = rowSums(pop[,c(8,11)]) ## reproductive females -- generally if there is a large group, the adults are females; males live "wild and free"; excluded exposes b/c they probably don't reproduce well?
-reprod.fem[reprod.fem < 2] <- 0
+## Why would you base density dependent birth on only S,E,R individuals? Birth yes, carrying capacity no.
+# reprod.fem = rowSums(pop[,c(8,11)]) ## reproductive females -- generally if there is a large group, the adults are females; males live "wild and free"; excluded exposes b/c they probably don't reproduce well?
+# reprod.fem[reprod.fem < 2] <- 0
 # reprod.fem = ceiling(rowSums(pop[,c(8,9,11)])/2) ## reproductive females (assuming 50/50 M/F split in any location; assume half pigs are female)
-piglets = pmin(10*reprod.fem,rnbinom(nrow(pop), mu=reprod.fem*Pbd*5, size=0.01)) ## more realistic per-cap reproduction by cell
+# piglets = pmin(10*reprod.fem,rnbinom(nrow(pop), mu=reprod.fem*Pbd*5, size=0.01)) ## more realistic per-cap reproduction by cell
+Sdpb = pmin(10*rowSums(pop[,c(8,9,11)]), rnbinom(nrow(pop), mu=Brate, size=0.01)) ## more realistic per-cap reproduction by cell
 ## caps litters at 10 per female, average is 5, times weekly growth rate from 2022 paper. 0.01 gives a good clumping measure. mu is probably wrong-- check mean of nbinom definitions in help file.
 
 #get total births, using Brate as mean in a poisson
@@ -82,7 +86,7 @@ piglets = pmin(10*reprod.fem,rnbinom(nrow(pop), mu=reprod.fem*Pbd*5, size=0.01))
 #print(paste0("Tbirths: ", Tbirths))
 #record total births this time step
 # BB[i]=Tbirths
-BB[i] = sum(piglets)
+BB[i] = sum(Sdpb)
 
 #Pick out enough numbers that sum to Tbirths - this will determine how many cells get births
 # id<-0
@@ -172,22 +176,23 @@ Pic=1-exp(-1/(rpois(cells,5)/7)) #transitions infected to either dead or recover
 ## the problem with this structure is you can have inter-dimensional swine-shifting as they spontaneously appear and disappear from the temporal plane
 
 ## density dependent death
-pop.dens <- unique(as.data.table(pop)[,loc.dens := sum(.SD), .SDcols=c('S','E','I','R'), by=cell][,.(cell, loc.dens)])
-pop.dens[,death.prob := exp(-mort_val + ((1 + death) * loc.dens))/(1 + exp(-mort_val + ((1 + death) * loc.dens)))]
+# pop.dens <- unique(as.data.table(pop)[,loc.dens := sum(.SD), .SDcols=c('S','E','I','R'), by=cell][,.(cell, loc.dens)])
+# pop.dens[,death.prob := exp(-mort_val + ((1 + death) * loc.dens))/(1 + exp(-mort_val + ((1 + death) * loc.dens)))]
 ## when population is too high, top and bottom of the above function become Inf, leading to NaN values which cause errors in rbinom()
 ## to prevent errors, change NaN values to 1 because this is a probability
 # death[is.nan(death)] <- 1
-pop.dens[is.nan(death.prob), death.prob := 1]
-pop <- as.matrix(as.data.table(pop)[pop.dens, on=.NATURAL])
+# pop.dens[is.nan(death.prob), death.prob := 1]
+# pop <- as.matrix(as.data.table(pop)[pop.dens, on=.NATURAL])
 #susceptible state changes
-Sdpd=rbinom(nrow(pop), pop[,8], pop[,15]) ## death is given as a rate, not a probability?
+Sdpd=rbinom(nrow(pop), pop[,8], death) ## death is given as a rate, not a probability?
+# Sdpd=rbinom(nrow(pop), pop[,8], pop[,15]) ## death is given as a rate, not a probability?
 # Eep=rbinom(nrow(pop), pop[,8], Pse[pop[,3]]) ## generates NA when Pse has negative values; error when Pse has NA
 Eep=rbinom(nrow(pop), pop[,8] - Sdpd, Pse[pop[,3]])
 ## could suppress warnings (see fix above), would rather have an internally consistent probability function.
 ## Eep = rbinom(nrow(pop), pop[,8]-Sdpd, Pse[pop[,3]]) if we have death separate from birth (i.e. ditch logistic growth equation)
 
 #exposed state changes
-Edpd=rbinom(nrow(pop), pop[,9], pop[,15]) ## exposed natural death
+Edpd=rbinom(nrow(pop), pop[,9], death) ## exposed natural death
 # Iep=rbinom(nrow(pop), pop[,9], Pei[pop[,3]]) ## exposed -> infected
 Iep=rbinom(nrow(pop), pop[,9] - Edpd, Pei[pop[,3]]) ## exposed -> infected
 ## this is where the sequential calculations could help to avoid the negatives -- set order of events
@@ -215,7 +220,8 @@ Cep = pop[,10] - Rep ## assuming we are expecting all infecteds to die or recove
 ## suggest: Cep = pop[,10] - Rep
 
 #recovered state changes
-Rdpd=rbinom(nrow(pop),pop[,11], pop[,15]) ## recovered -> natural death
+Rdpd=rbinom(nrow(pop),pop[,11], death) ## recovered -> natural death
+# Rdpd=rbinom(nrow(pop),pop[,11], pop[,15]) ## recovered -> natural death
 
 
 #infected carcass state changes
@@ -241,8 +247,7 @@ Incidence[i]<-Incidence[i]+sum(Eep)
 
 #update states in pop matrix
 ###################################
-pop[,8]=pop[,8]-Eep+piglets-Sdpd #S
-# pop[,8]=pop[,8]-Eep+Sdpb-Sdpd #S
+pop[,8]=pop[,8]-Eep+Sdpb-Sdpd #S
 pop[,9]=pop[,9]-Iep+Eep-Edpd #E
 pop[,10]=pop[,10]-Rep-Cep+Iep#-Idpd#I
 pop[,11]=pop[,11]+Rep-Rdpd #R

@@ -120,7 +120,7 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
         fullZONE.dt <- unique(fullZONE.dt[fullZONE.dt[,min(V3),by=V2], on=.(V2,V3=V1)])
         setnames(fullZONE.dt, c('V1','V2','V3'), c('det.cell','cell','dist'))
         # convert popINzone to a data table and aggregate state variables by summation
-        popINzone.agg <- as.data.table(popINzone[,c(3,8:13)])[,lapply(.SD, sum), by=cell, .SDcols=2:7]
+        popINzone.agg <- as.data.table(popINzone[,c(3,8:13),drop=FALSE])[,lapply(.SD, sum), by=cell, .SDcols=2:7]
         # connect popINzone table with cell distances; clean out rows by cell id which have multiple detection points at the same distance (just keep one, doesn't matter which for this)
         fullZONEpigs <- fullZONE.dt[popINzone.agg, on=.(cell = cell)][,.SD[1],by=cell]
 		## all the rows without pigs would be removed anyway below, so don't need all.x=TRUE
@@ -156,6 +156,10 @@ CullingOneRun <- function(pop, idNEW, idZONE, Intensity, alphaC, centroids, Rad,
             } else if (max(fullZONEpigs[,cum.cull], na.rm=TRUE) < 0.05){
                 # if the cumulative proportion of culling doesn't reach 0.05, just take everything marked for culling by cull.cell
                 target.value <- max(fullZONEpigs[,cum.cull], na.rm=TRUE)
+            } else if (min(fullZONEpigs[,cum.cull], na.rm=TRUE) > 0.05 & sum(fullZONEpigs[,cell.total]) < 20){
+                # if the lowest cumulative proportion of cullable cells is too big AND it is because the total pigs in the zone is less than what would be necessary to make ANY cell contain  less than 5% of the total pigs, just take the cell closest to the source as the culled locations
+                # keeps the culling going when it starts to become the victim of its own success, since with an increasing area and decreasing density you will eventually have a single pig making up more than 5% of the total in the cell
+                target.value <- min(fullZONEpigs[,cum.cull], na.rm=TRUE)
             } else {
                 # if the cumulative culling proprotion goes above 0.05 and no cell lands it exactly at 0.05, take up to the first cell that pushes
                 # the cumulative culling proportion above 0.05
