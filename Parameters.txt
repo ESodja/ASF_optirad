@@ -214,6 +214,9 @@ mc_time = mean(c_time); %mean daily conception probability
 %c_time = repmat(mean(c_time),1,365*5);
 
 
+THE OTHER THING about using the carrying capacity in this way is it bases the birth rate on density across the entire simulation space, which would be fine right up until you start culling -- then you are reducing the total number of pigs but keeping carrying capacity the same, so even areas several kilometers away from the culling zone will have increased reproduction, magically, because pigs were killed somewhere else. This could create an artefact of having high density rebounds outside the control zone, and therefore increasing spread globally potentially pushing the infection to spread farther.
+
+
 #########################
 #### Output options #####
 #########################

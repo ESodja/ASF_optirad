@@ -5,3 +5,5 @@ Landscape_Setup
 ./_targets.yaml
 ./_targets/meta/meta
 *.zip
+./Input/land
+./Input/land_reserve

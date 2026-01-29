@@ -7,7 +7,7 @@ sounderSplit <- function(pop, ss){
     split.prob <- exp(-(1+2*ss) + pop[,1])/(1+exp(-(1+2*ss) + pop[,1]))
     # if population gets too high too quickly, split.prob becomes NaN causing an error. In this case, probability of split becomes 1
     split.prob[is.nan(split.prob)] <- 1
-    # sounders of size ss or less will not split
+    # sounders of size 2*ss or less will not split
     split.prob[pop[,1] <= 2*ss] <- 0
     # choose which sounders will split
     split.bin <- rbinom(split.prob, 1, split.prob)
@@ -15,9 +15,6 @@ sounderSplit <- function(pop, ss){
     if(sum(split.bin) != 0) {
         split.size <- floor(pop[split.bin==1, 8:11, drop=FALSE]/2)
         # get a matrix of the new sounders
-#         print(split.size)
-#         print(pop[split.bin==1,])
-#         if(nrow(pop[split.bin==1,,drop=FALSE]) != nrow(split.size)) browser()
         new.sounders <- cbind(pop[split.bin==1, 1:7, drop=FALSE], split.size, C=0, Z=0)
         # subtract the departed sounders from the original sounders
         pop[split.bin==1,8:11] <- pop[split.bin==1,8:11, drop=FALSE] - split.size

@@ -1,31 +1,24 @@
 ##The purpose of this script is to run a single rep of the ASF control optimization model
 
-SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r, burn.end){
+SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functions, K, v, l, r){
     require(dplyr)
     for(i in 1:length(cpp_functions)){
         print(paste0("sourcing ",cpp_functions[[i]]))
         Rcpp::sourceCpp(cpp_functions[[i]])
     }
 
-############################################################
 ######## Release parameters to function environment ########
-############################################################
     list2env(parameters, .GlobalEnv)
 
-###########################################
 ######## Initialize Output Objects ########
-###########################################
     list2env(outputs, .GlobalEnv)
 
 #track first infection in Incidence matrix
     Incidence[1] <- num_inf_0
 
-##################################
 ######## Start simulation ########
-##################################
-
-    i <- burn.end
-    while(any(pop[, 9, drop=FALSE] != 0 | pop[, 10, drop=FALSE] != 0 | pop[, 12, drop=FALSE] != 0) & i < thyme + burn.end){
+    i <- 0
+    while(any(pop[, 9, drop=FALSE] != 0 | pop[, 10, drop=FALSE] != 0 | pop[, 12, drop=FALSE] != 0) & i < thyme){
         i <- i+1 ## keeps the counting clean if the virus dies out before 'thyme'
         print(paste0("timestep: ",i))
         print(colSums(pop[,8:13]))
@@ -34,10 +27,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
             loc.list[[i]] <- pop[, c(3,8:13)]
         }
 
-#####################################
 ######## Track I/C locations ########
-#####################################
-
         if(nrow(pop[pop[, 10] > 0,, drop=FALSE]) > 0){
             Isums[i] <- nrow(pop[pop[, 10] > 0,, drop=FALSE])
         } else {
@@ -54,21 +44,15 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         C_locs[[i]] <- pop[pop[, 12] > 0, 3]
 
 ######## Sounder Split ########
-
         if (any(pop[,1] > 2*ss)){
             pop <- sounderSplit(pop, ss)
         }
 
-##########################
 ######## Movement ########
-##########################
-
         pop <- FastMovement(pop, centroids, shape, rate, inc, mv_pref)
 
-###############################
 ######## State Changes ########
-###############################
-#births, natural deaths, disease state changes (exposure, infection, recovery, death), carcass decay
+        #births, natural deaths, disease state changes (exposure, infection, recovery, death), carcass decay
         st.list <- StateChanges(pop, centroids, nrow(centroids), parameters, Incidence, BB, i)
 
         Eep_mat[i,] <- st.list$Eep
@@ -87,7 +71,6 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 
 
         if("incidence" %in% out.opts){
-## is there a reason this was counting from the pre-state changes list instead of st.list[[1]]?
             inf.locs <- rep(pop[(pop[, 10] > 0), 3], pop[(pop[, 10] > 0), 10]) #locs infected
             inf.num <- sum(pop[, 10]) #num infected
             exp.locs <- rep(pop[pop[, 9] > 0, 3], pop[, 9][pop[, 9] > 0]) #locs exposed
@@ -114,17 +97,16 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
                     inc.mat.i[(inf.num + exp.num + 1):nrow(inc.mat.i), 2] <- 12 #code 12 for carcass, same as pop colnum
                 }
 
-                if(i == burn.end+1){
+                if(i == 1){
                     inc.mat <- inc.mat.i
                 } else {
                     inc.mat <- rbind(inc.mat, inc.mat.i)
                 }
-            } else if(i == burn.end+1){ # +1 because we already changed i at the top of the loop
+            } else if(i == 1){
                 inc.mat <- matrix(nrow=0, ncol=3)
             }
         }
 
-###**start on day of first detection
 ###################################
 ######## Initiate Response ########
 ###################################
@@ -145,7 +127,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 
         # If sampling turned off and it's detect day based on user input,
         # run FirstDetect because there are infected pigs to detect, and Rad>0
-        if(sample != 1 & i == detectday+burn.end & sum(pop[, c(9, 10, 12)]) > 0 & Rad > 0){
+        if(sample != 1 & i == detectday & sum(pop[, c(9, 10, 12)]) > 0 & Rad > 0){
             fd.list <- FirstDetect(pop, i, POSlive, POSdead, POSlive_locs, POSdead_locs)
             pop <- fd.list[[1]]
             POSlive <- fd.list[[2]]
@@ -162,7 +144,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 #######################################
 
 #if it is at least day after detect day, and Rad>0
-        if(sample != 1 & i > detectday+burn.end & Rad > 0) {
+        if(sample != 1 & i > detectday & Rad > 0) {
 
             #new detections from last step, bc day lag
             #(either from initial detection or last culling period)
@@ -173,7 +155,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
             #if there were detections in previous time steps, only get newly detected infected grid cells
             #"infected grid cell"=grid cell where there was an infected pig or carcass
             if(length(idZONE[,1]) > 0){
-                uniqueidNEW <- which(!(idNEW %in% idZONE[,1])) ## because we are looking for only new detection locations, not locations anywhere in the zone
+                uniqueidNEW <- which(!(idNEW %in% idZONE[,1]))
                 idNEW <- idNEW[uniqueidNEW]
             } else {
                 idNEW <- idNEW
@@ -203,7 +185,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
             #compile optional outputs
             if("idzone" %in% out.opts){
                 #get list index
-                idz <- detectday+burn.end - i
+                idz <- detectday - i
                 if(idz==1){
                     idzone.mat.idz <- idZONE[, 2]
                     idzone.mat <- cbind(idzone.mat.idz, rep(i, length=length(idzone.mat.idz)))
@@ -233,7 +215,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 ####Summarize infections
 #############################
 #sum all infectious cases (I,C,E) at each timestep
-        if(i == detectday+burn.end){
+        if(i == detectday){
             ICtrue[i] <- sum(colSums(pop)[c(9, 10, 12)]) + 1 #account for having removed that first detected
         } else {
             ICtrue[i] <- sum(colSums(pop)[c(9, 10, 12)])
@@ -244,14 +226,10 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         pigcols <- c(1, 8:13)
         pop <- pop[which(rowSums(pop[, pigcols, drop=FALSE]) != 0),, drop=FALSE]
 
-#         lapply(ls(), function(x) {print(x); print(object.size(x))})
-
     } # end while loop of timesteps
 
-    print('finish')
-#############################
-#############################
-#     if(length(out.opts) > 0){
+    print('finish simulations')
+
     input.opts <- vector(mode="list", length=1)
     input.opts[[1]] <- out.opts
     names(input.opts)[1] <- "out.opts"
@@ -303,9 +281,8 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         input.opts <- append(input.opts,templist)
         names(input.opts)[length(input.opts)] <- "incidence"
     }
-#     }
 
-    list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday+burn.end, Ct, out.opts, input.opts, burn.end=burn.end)
+    list.all <- GetOutputs(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts)
 
 ## want the end time as output to trim matrices
     list.all <- append(list.all, i)

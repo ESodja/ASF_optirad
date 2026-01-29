@@ -9,42 +9,35 @@
 
 #object=c(parameters$len,parameters$inc)
 #grid.opt=parameters$grid.opts
-InitializeGrids<-function(object,grid.opt="homogeneous"){
-	
+InitializeGrids <- function(object, grid.opt="homogeneous"){
     if(class(object)=="SpatRaster"){
-      tar.grid.list=vector(mode="list",length=1)
-      
-      grid.list=Make_Grid(object,grid.opt)
-      tar.grid.list[[1]]=grid.list
+        tar.grid.list <- vector(mode="list", length=1)
+        grid.list <- Make_Grid(object, grid.opt)
+        tar.grid.list[[1]] <- grid.list
     }
-  
     if(class(object)=="SpatRasterCollection"){
-      tar.grid.list=vector(mode="list",length=length(object))
-      
-      for(g in 1:length(object)){
-        ras=object[g]
-        grid.list=Make_Grid(ras,grid.opt)
-        tar.grid.list[[g]]=grid.list
-      }
-      
+        tar.grid.list <- vector(mode="list", length=length(object))
+        for(g in 1:length(object)){
+            ras <- object[g]
+            grid.list <- Make_Grid(ras, grid.opt)
+            tar.grid.list[[g]] <- grid.list
+        }
     }
     #vector of len, inc
     if(class(object)=="numeric"){
-      if(length(object)==3){
-        tar.grid.list=vector(mode="list",length=object[3])
-        for(g in 1:object[3]){
-          grid.list=Make_Grid(c(object[1],object[2]),grid.opt)
-          tar.grid.list[[g]]=grid.list
+        if(length(object)==3){
+            tar.grid.list <- vector(mode="list", length=object[3])
+            for(g in 1:object[3]){
+            grid.list <- Make_Grid(c(object[1], object[2]), grid.opt)
+            tar.grid.list[[g]] <- grid.list
+            }
+        } else{
+            tar.grid.list <- vector(mode="list", length=1)
+            grid.list <- Make_Grid(c(object[1], object[2]), grid.opt)
+            tar.grid.list[[1]] <- grid.list
         }
-      } else{
-        tar.grid.list=vector(mode="list",length=1)
-        grid.list=Make_Grid(c(object[1],object[2]),grid.opt)
-        tar.grid.list[[1]]=grid.list
-      }
     }
-    
-  return(tar.grid.list)
-  
+    return(tar.grid.list)
 }
 
 
