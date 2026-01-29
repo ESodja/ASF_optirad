@@ -1,5 +1,5 @@
 
-GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts, burn.end=0, is.burn=FALSE){
+GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, detectday, Ct, out.opts, input.opts){
   
   #List of outputs created here:	
 	#Tinc #sum of all exposures over simulation 
@@ -20,12 +20,8 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
   #toggle options: num new infections at each step
   #toggle options: R0 at each step
   
-    #############################################################
-
-    ##############################
     ### Summarize main outputs ###
-    ##############################
-tstart <- Sys.time()
+
     #Tinc, this just sums all of the exposures
     Tinc <- sum(Incidence)
 
@@ -44,7 +40,6 @@ tstart <- Sys.time()
         IConDD <- 0
         ICatEnd <- 0
     }
-print(paste('pt1', Sys.time()-tstart))
     #Find max spread of infection
     Mspread <- max(out[,2])
 
@@ -55,18 +50,12 @@ print(paste('pt1', Sys.time()-tstart))
     TincFromDD <- sum(Incidence[detectday:idT])
 
     #DET #total number of detections
-    #DET=sum(unlist(POSlive),unlist(POSdead))
-    DET = NA
-    ## should get rid of?
-    #############################################################
+    DET <- NA
 
-    ############################
     ### Compile main outputs ###
-    ############################
-print(paste('pt2', Sys.time()-tstart))
 
     #send all main outputs to list
-    list.all = list("Tinc" = Tinc,
+    list.all <- list("Tinc" = Tinc,
                 "sumTculled" = sumTculled,
                 "BB" = BB,
                 "Mspread" = Mspread,
@@ -78,78 +67,50 @@ print(paste('pt2', Sys.time()-tstart))
                 "Ct" = Ct,
                 "pop" = pop)
 
-    #############################################################
-
-    ##################################
     ### Summarize optional outputs ###
-    ##################################
 
     #loc.list: is pop[,c(3,8:13)] for each timestep in list of length thyme
     #cell num, S, E, I, R, C, Z
     #convert loc.list into dataframe
 
     if("sounderlocs" %in% out.opts){
-print(paste('pt2a', Sys.time()-tstart))
         loc.list <- input.opts$loc.list
-print(paste('pt2b', Sys.time()-tstart))
         input.rng <- 1:length(loc.list)
-print(paste('pt2c', Sys.time()-tstart))
-        locs.df <- data.table()
+        input.rng <- input.rng[lapply(loc.list, length) != 0]
 
-print(paste('pt2d', Sys.time()-tstart))
-    ## THIS BIT IS SUPER SLOW
-        for(i in input.rng){
-            if(length(loc.list[[i]]) != 0){
-                locs.i <- as.data.table(centroids[matrix(loc.list[[i]], ncol=7)[,1], , drop=FALSE])
-                colnames(locs.i) <- c("x","y","unknown")[seq(ncol(locs.i))]
-                # assign state variable values to locs.i
-                locs.i[, ':=' (timestep = i,
-                            S = loc.list[[i]][,2],
-                            E = loc.list[[i]][,3],
-                            I = loc.list[[i]][,4],
-                            R = loc.list[[i]][,5],
-                            C = loc.list[[i]][,6],
-                            Z = loc.list[[i]][,7]
-                            )]
-                locs.df <- rbindlist(list(locs.df, locs.i))
-            }
-        }
+        locs.df <- rbindlist(lapply(input.rng, function(i){
+            # get locations
+            locs.i <- as.data.table(centroids[matrix(loc.list[[i]], ncol=7)[,1], , drop=FALSE])
+            # add timestep and state variable values to locs.i
+            locs.i <- cbind(i, locs.i, loc.list[[i]][,2:7])
+            # set names for output
+            colnames(locs.i) <- c("time",c("x","y","unknown")[seq(ncol(locs.i))], c('S','E','I','R','C','Z'))
+            return(locs.i)
+        }))
     }
 
-print(paste('pt3', Sys.time()-tstart))
     #Get POSlive, dead, and all locs in datafame format from list
     if("alldetections" %in% out.opts){
         #all should be same length, thyme
-        POSlive=input.opts$POSlive
-        POSlive_locs=input.opts$POSlive_locs
-        POSdead=input.opts$POSdead
-        POSdead_locs=input.opts$POSdead_locs
-        allzone = input.opts$allzonecells
+        POSlive <- input.opts$POSlive
+        POSlive_locs <- input.opts$POSlive_locs
+        POSdead <- input.opts$POSdead
+        POSdead_locs <- input.opts$POSdead_locs
+        allzone <- input.opts$allzonecells
 
-        detections=matrix(nrow=0,ncol=4)
-
-        for(i in 1:length(POSlive)){
-            live.detections.i<-matrix(nrow=length(c(POSlive_locs[[i]])),ncol=4)
-            live.detections.i[,1]<-i
-            live.detections.i[,2]<-1 #code for live
-            live.detections.i[,3]<-POSlive[[i]]
-            live.detections.i[,4]<-c(POSlive_locs[[i]])
+        detections <- rbindlist(lapply(1:length(POSlive), function(i)){
+            live.detections.i <- data.table(i, 1, POSlive[[i]], POSlive_locs[[i]])
 
             # Create dead detections after live detections are populated
-            dead.detections.i <- matrix(nrow = length(c(POSdead_locs[[i]])), ncol = 4)
-            dead.detections.i[, 1] <- i  # Week
-            dead.detections.i[, 2] <- 0  # Code for dead
-            dead.detections.i[, 3] <- POSdead[[i]]  # POSdead values
-            dead.detections.i[, 4] <- c(POSdead_locs[[i]])  # Locations
+            dead.detections.i <- data.table(i, 0, POSdead[[i]], POSdead_locs[[i]])
 
             # Combine live and dead detections into detections.i
             detections.i <- rbind(live.detections.i, dead.detections.i)
 
             # Add the combined detections to the final detections matrix
             detections <- rbind(detections, detections.i)
-        }
+        })
 
-print(paste('pt4', Sys.time()-tstart))
         # Now, outside of the loop, check if sample == 1 to combine live detections with sampled pigs
         if (sample == 1) {
             # Get the sampled pigs for the timestep
@@ -169,58 +130,46 @@ print(paste('pt4', Sys.time()-tstart))
         #Rt (total, homog) at each time step
         inc.mat <- input.opts$incidence
         inc.df <- as.data.frame(inc.mat)
-        colnames(inc.df) <- c("timestep","state","loc")
-        inc.df[inc.df$state==10,2] <- "infected" #any infected that could have exposed susceptibles
-        inc.df[inc.df$state==9,2] <- "exposed" #exposed this timestep
-        inc.df[inc.df$state==12,2] <- "carcass" #exposed this timestep
+        colnames(inc.df) <- c("timestep", "state", "loc")
+        inc.df[inc.df$state == 10, 2] <- "infected" #any infected that could have exposed susceptibles
+        inc.df[inc.df$state == 9, 2] <- "exposed" #exposed this timestep
+        inc.df[inc.df$state == 12, 2] <- "carcass" #exposed this timestep
     }
 
-    #############################################################
-
-print(paste('pt5', Sys.time()-tstart))
-    ###############################
     ### Append optional outputs ###
-    ###############################
+
     if("sounderlocs" %in% out.opts){
-        templist <- vector(mode="list",length=1)
+        templist <- vector(mode="list", length=1)
         templist[[1]] <- locs.df
-        list.all <- append(list.all,templist)
+        list.all <- append(list.all, templist)
         names(list.all)[length(list.all)] <- "sounderlocs"
     }
 
     if("idzone" %in% out.opts){
-        templist <- vector(mode="list",length=1)
+        templist <- vector(mode="list", length=1)
         templist[[1]] <- input.opts$idzone.mat
-        list.all <- append(list.all,templist)
+        list.all <- append(list.all, templist)
         names(list.all)[length(list.all)] <- "idzone"
     }
 
     if("alldetections" %in% out.opts){
-        templist <- vector(mode="list",length=1)
+        templist <- vector(mode="list", length=1)
         templist[[1]] <- detections
-        list.all <- append(list.all,templist)
+        list.all <- append(list.all, templist)
         names(list.all)[length(list.all)] <- "alldetections"
 
-        templist <- vector(mode="list",length=1)
+        templist <- vector(mode="list", length=1)
         templist[[1]] <- input.opts$allzonecells
-        list.all <- append(list.all,templist)
+        list.all <- append(list.all, templist)
         names(list.all)[length(list.all)] <- "allzonecells"
     }
 
     if("incidence" %in% out.opts){
-        templist <- vector(mode="list",length=1)
+        templist <- vector(mode="list", length=1)
         templist[[1]] <- inc.df
-        list.all <- append(list.all,templist)
+        list.all <- append(list.all, templist)
         names(list.all)[length(list.all)] <- "incidence"
     }
 
-    #############################################################
-
-    ###########################
-    ### Return final output ###
-    ###########################
-
-print(paste('pt6', Sys.time()-tstart))
     return(list.all)
-
 }

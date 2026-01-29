@@ -3,8 +3,6 @@
 rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as.list(rep(NA, 5))){
 
     list2env(parameters, .GlobalEnv)
-    burntime <- 0
-    if(r == 0){ burntime <- out.list$endtime } # if it is a burnin rep output
 
     # if it is the burnin, the r=0 below will overwrite NA defaults in this irrelevant
     # if it is after the burn-in, these will have existing values that new values will be added to
@@ -26,7 +24,6 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     colnames(tm.mat.r)[ncol(tm.mat.r)]="Ct"
 
     # Births
-#             BB.r = out.list$BB
     tm.mat.r <- cbind(tm.mat.r, out.list$BB[seq(end.tm)])
     colnames(tm.mat.r)[ncol(tm.mat.r)] <- 'BB'
 
@@ -41,9 +38,9 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     # detections (optional...)
     ## has a row for each timestep AND detection type, with timestep, code (1=live,0=dead), number of individuals detected, and position
     ## still need to test sample = 1
-    if (end.tm > detectday+burntime & 'alldetections' %in% out.opts){
+    if (end.tm > detectday & 'alldetections' %in% out.opts){
         detections.r <- out.list$alldetections
-        detections.r <- detections.r[detections.r[,1] <= end.tm & detections.r[,1] >= (detectday+burntime),]
+        detections.r <- detections.r[detections.r[,1] <= end.tm & detections.r[,1] >= detectday,]
         n.det <- nrow(detections.r)
         detections.r <- suppressWarnings(cbind(matrix(id.r, ncol=3, nrow=n.det, byrow=TRUE), detections.r)) # gave a warning if there were no detections; very annoying
         colnames(detections.r) <- c('var','land','rep','timestep','code','detected','loc')
@@ -66,7 +63,7 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
     colnames(summ.vals.r) <- c('var','land','rep',names(out.list[c(1,2,4:9,length(out.list))]))
 
     # Put new results in output objects OR add new results to existing output objects
-    if(r==0 & l==1 & v==1){ # i.e. if it is a burnin rep output
+    if(r==1 & l==1 & v==1){
         tm.mat <- tm.mat.r
         summ.vals <- summ.vals.r
         if ("incidence" %in% out.opts) incidence <- incidence.r
@@ -86,7 +83,7 @@ rep_outputs <- function(out.list, v, l, r, parameters, out.opts, prevrep.in = as
             incidence <- rbind(incidence, incidence.r)
             incidence <- incidence[!is.na(incidence[,1]),,drop=FALSE]
         }
-        if (end.tm > (detectday+burntime) & "alldetections" %in% out.opts) {
+        if (end.tm > detectday & "alldetections" %in% out.opts) {
             detections <- rbind(detections, detections.r)
             detections <- detections[!is.na(detections[,1]),,drop=FALSE]
             if (is.null(nrow(allzone))) {

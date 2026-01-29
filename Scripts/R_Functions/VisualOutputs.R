@@ -12,20 +12,20 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     lapply(out.list, function(x) print(names(x)))
 
     # make things into data.tables and name columns for sanity
-    tm.mat= as.data.table(out.list["tm.mat"])
+    tm.mat <- as.data.table(out.list["tm.mat"])
     setnames(tm.mat, unlist(lapply(strsplit(names(tm.mat), 'tm.mat.'), function(x) unlist(x)[2])))
     tm.mat <- tm.mat[!is.na(timestep),]
-    summ.vals= as.data.table(out.list["summ.vals"])
+    summ.vals <- as.data.table(out.list["summ.vals"])
     setnames(summ.vals, unlist(lapply(strsplit(names(summ.vals), 'summ.vals.'), function(x) unlist(x)[2])))
     summ.vals <- summ.vals[!is.na(endtime)]
-    incidence= as.data.table(out.list["incidence"])
+    incidence <- as.data.table(out.list["incidence"])
     setnames(incidence, unlist(lapply(strsplit(names(incidence), 'incidence.'), function(x) unlist(x)[2])))
     incidence[,max.time := max(timestep), by=.(var, rep, land)]
-    detections= as.data.table(out.list["detections"])
+    detections <- as.data.table(out.list["detections"])
     setnames(detections, unlist(lapply(strsplit(names(detections), 'detections.'), function(x) unlist(x)[2])))
     if(nrow(detections) > 0) {
         detections[,max.time := max(timestep), by=.(var, rep, land)]
-        unq.det <- unique(detections[,.(var,land,rep,timestep,loc,max.time,code,detected)])
+        unq.det <- unique(detections[, .(var, land, rep, timestep, loc, max.time, code, detected)])
     }
     allzones <- as.data.table(out.list["allzone"])
     setnames(allzones, unlist(lapply(strsplit(names(allzones), 'allzone.'), function(x) unlist(x)[2])))
@@ -38,9 +38,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     # generate an image for environment quality grid
     ## only works for single grid in land_grid_list
     grid.centers.out <- rbindlist(lapply(seq(length(land_grid_list)), function(i){
-        grid.key = as.data.table(land_grid_list[[i]][[2]])
+        grid.key <- as.data.table(land_grid_list[[i]][[2]])
         setnames(grid.key, c('cell','tlX','tlY','trX','trY','ctX','ctY','rasval')[1:ncol(grid.key)]) ## see Make_Grid.R
-        grid.centers = cbind(grid.key[,.(cell, ctX, ctY, rasval)], land=i)
+        grid.centers <- cbind(grid.key[,.(cell, ctX, ctY, rasval)], land=i)
         return(grid.centers)
     }))
 
@@ -49,67 +49,68 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     tm.pop.unq <- unique(tm.mat[,.(var, land)])
     rows.plt <- round(sqrt(length(unique(tm.pop.unq[,var]))))
     cols.plt <- ceiling(sqrt(length(unique(tm.pop.unq[,var]))))
-    png('./test_outputs/tm.plots.png', width=450*cols.plt, height=500*rows.plt)
-    ## make plot dimensions dynamics based on parameter inputs
-    pdef <- par(mfrow=c(rows.plt, cols.plt),
-            oma=c(8,1.2,0.2,0.2),
-            lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
-    # par(mfrow=c(1,1), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
-    # par(mfcol=c(length(unique(tm.mat[,var])), length(unique(tm.mat[,land]))))
-    # set plot ranges based on maximum of everything that will be on the multiplot figure
-    xrng = range(tm.mat[,timestep])
-    yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
-    # loop over the parameter combinations for each plot panel
-    seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = variables){
-        vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion
-        # xlabel default
-        xlabi <- ''
-        # ylabel default
-        ylabi <- ''
-        # default plot panel margin sizes
-        bmar <- lmar <- 2
-        if (plt.i / rows.plt >= rows.plt){ # first row of panels
-            xlabi <- 'time (weeks)'
-            bmar <- 4
+    for (l in unique(tm.pop.unq[,land])){
+        png(paste0('./test_outputs/tm.plots_land_',l,'.png'), width=450*cols.plt, height=500*rows.plt)
+        ## make plot dimensions dynamics based on parameter inputs
+        pdef <- par(mfrow=c(rows.plt, cols.plt),
+                oma=c(8,1.2,0.2,0.2),
+                lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
+        # par(mfrow=c(1,1), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
+        # par(mfcol=c(length(unique(tm.mat[,var])), length(unique(tm.mat[,land]))))
+        # set plot ranges based on maximum of everything that will be on the multiplot figure
+        xrng = range(tm.mat[,timestep])
+        yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
+        # loop over the parameter combinations for each plot panel
+        seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = variables){
+            vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion
+            # xlabel default
+            xlabi <- ''
+            # ylabel default
+            ylabi <- ''
+            # default plot panel margin sizes
+            bmar <- lmar <- 2
+            if (plt.i / rows.plt >= rows.plt){ # first row of panels
+                xlabi <- 'time (weeks)'
+                bmar <- 4
+            }
+            if (plt.i %% cols.plt == 1){ # first column of panels
+                ylabi <- 'log(1+individuals)'
+                lmar <- 4
+            }
+            pdef2 <- par(mar = c(bmar, lmar, 1, 1))
+            # create a blank plot
+            plot(0,0,xlim=xrng, ylim=yrng, col=NULL, ann=FALSE)
+            mtext(xlabi, 1, line=2.5, cex=1.8)
+            mtext(ylabi, 2, line=2.5, cex=1.8)
+            mtext(paste('vars',v,'| land',l), 3, line=-1.5, cex=1.7, font=2)
+            mtext(vardat, 3, line=-2.7)
+            # subset with things that have only the land tile and variable combination
+            subdat <- dat[var==v & land==l,]
+            # count up reps
+            reps <- unique(subdat[,rep])
+            # draw a line of each type for each rep
+            lapply(reps, function(r) lines(log1p(S) ~ timestep, data=subdat[rep==r | rep == 0,], col='olivedrab', lty=1))
+            lapply(reps, function(r) lines(log1p(E) ~ timestep, data=subdat[rep==r | rep == 0,], col='orange', lty=1))
+            lapply(reps, function(r) lines(log1p(I) ~ timestep, data=subdat[rep==r | rep == 0,], col='red', lty=1))
+            lapply(reps, function(r) lines(log1p(R) ~ timestep, data=subdat[rep==r | rep == 0,], col='blue', lty=1))
+            lapply(reps, function(r) lines(log1p(C) ~ timestep, data=subdat[rep==r | rep == 0,], col='purple', lty=1))
+            lapply(reps, function(r) lines(log1p(Z) ~ timestep, data=subdat[rep==r | rep == 0,], col='black', lty=1))
+            lapply(reps, function(r) lines(log1p(BB) ~ timestep, data=subdat[rep==r | rep == 0,], col='pink', lty=1))
+            lapply(reps, function(r) abline(v=subdat[rep==r,max(timestep)], col='grey'))
+            lapply(reps, function(r) abline(v=subdat[rep==0,max(timestep)], col='black', lty=3))
+            par(pdef2)
         }
-        if (plt.i %% cols.plt == 1){ # first column of panels
-            ylabi <- 'log(1+individuals)'
-            lmar <- 4
-        }
-        pdef2 <- par(mar = c(bmar, lmar, 1, 1))
-        # create a blank plot
-#         plot(0,0,xlim=xrng, ylim=yrng, xlab=xlabi, ylab=ylabi, col=NULL, main=paste('pop dynamics: vars',v,'| land',l), sub=vardat)
-        plot(0,0,xlim=xrng, ylim=yrng, col=NULL, ann=FALSE)
-        mtext(xlabi, 1, line=2.5, cex=1.8)
-        mtext(ylabi, 2, line=2.5, cex=1.8)
-        mtext(paste('vars',v,'| land',l), 3, line=-1.5, cex=1.7, font=2)
-        mtext(vardat, 3, line=-2.7)
-        # subset with things that have only the land tile and variable combination
-        subdat <- dat[var==v & land==l,]
-        # count up reps
-        reps = unique(subdat[,rep])
-        # draw a line of each type for each rep
-        lapply(reps, function(r) lines(log1p(S) ~ timestep, data=subdat[rep==r | rep == 0,], col='olivedrab', lty=1))
-        lapply(reps, function(r) lines(log1p(E) ~ timestep, data=subdat[rep==r | rep == 0,], col='orange', lty=1))
-        lapply(reps, function(r) lines(log1p(I) ~ timestep, data=subdat[rep==r | rep == 0,], col='red', lty=1))
-        lapply(reps, function(r) lines(log1p(R) ~ timestep, data=subdat[rep==r | rep == 0,], col='blue', lty=1))
-        lapply(reps, function(r) lines(log1p(C) ~ timestep, data=subdat[rep==r | rep == 0,], col='purple', lty=1))
-        lapply(reps, function(r) lines(log1p(Z) ~ timestep, data=subdat[rep==r | rep == 0,], col='black', lty=1))
-        lapply(reps, function(r) lines(log1p(BB) ~ timestep, data=subdat[rep==r | rep == 0,], col='pink', lty=1))
-        lapply(reps, function(r) abline(v=subdat[rep==r,max(timestep)], col='grey'))
-        lapply(reps, function(r) abline(v=subdat[rep==0,max(timestep)], col='black', lty=3))
-        par(pdef2)
+        mapply(seirczbb.temporal, v=tm.pop.unq[land==l, var], l=tm.pop.unq[land==l,land], plt.i=seq(nrow(tm.pop.unq[land==l,])), MoreArgs = list(rows.plt=rows.plt, cols.plt=cols.plt))
+        # create a legend under the panels
+        par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
+        plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+        legend("bottom", legend=c('S','E','I','R','C','Z','Births'),#'rep1','rep2'),
+            lty=c(rep(1,8), 2),
+            col=c('olivedrab','orange','red','blue','purple','black','pink'),#'grey','grey'),
+            horiz=TRUE, bty='n', cex=2.3, lwd=3)
+        dev.off()
+        par(pdef)
     }
-    mapply(seirczbb.temporal, v=tm.pop.unq[,var], l=tm.pop.unq[,land], plt.i=seq(nrow(tm.pop.unq)), MoreArgs = list(rows.plt=rows.plt, cols.plt=cols.plt))
-    # create a legend under the panels
-    par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
-    plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
-    legend("bottom", legend=c('S','E','I','R','C','Z','Births'),#'rep1','rep2'),
-        lty=c(rep(1,8), 2),
-        col=c('olivedrab','orange','red','blue','purple','black','pink'),#'grey','grey'),
-        horiz=TRUE, bty='n', cex=2.3, lwd=3)
-    dev.off()
-    par(pdef)
 
 
     ## plots of the spatial data
@@ -266,10 +267,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
             library(animation)
             plot.step <- function(x){
-                panels <- layout(matrix(c(1,1,1,2,3,4), nrow=3,ncol=2), widths=c(3,1), heights=c(1,1,1), respect=FALSE)
-                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100), main=paste('week', x), cex=log1p(sub.solocs[timestep==x, nlive]))
+                panels <- layout(matrix(c(1, 1, 1, 2, 3, 4), nrow=3, ncol=2), widths=c(3, 1), heights=c(1, 1, 1), respect=FALSE)
+                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[timestep==x, nlive]))
                 points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch=3, col='yellow')
-#                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
                 if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
                 plot(allnlive ~ timestep, data=sub.solocs[, allnlive := sum(nlive), by=timestep][order(timestep)], main='Live pigs', type='l')
@@ -282,7 +282,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
                     points(cs ~ timestep, data=temp.detect[timestep==x, ], pch=2, col='blue', cex=2)
                 }
             }
-            out.gif <- paste0('testgif_vars_',i,'_land_',j,'_rep_',k,'.gif')
+            out.gif <- paste0('testgif_vars_', i, '_land_', j, '_rep_', k, '.gif')
             saveGIF({
                 lapply(seq(min(sub.incidence[,timestep]), max(sub.incidence[,timestep])), plot.step)
             }, movie.name = out.gif, ani.width=850, ani.height=600, interval=0.1, imgdir='./test_outputs')
