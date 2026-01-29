@@ -24,7 +24,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         print(colSums(pop[,8:13]))
 
         if("sounderlocs" %in% out.opts){
-            loc.list[[i]] <- pop[, c(3,8:13)]
+            loc.list[[i]] <- pop[, c(3, 8:13)]
         }
 
 ######## Track I/C locations ########
@@ -79,7 +79,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
             c.num <- sum(pop[, 12]) #num infectious carcass
 
             if(inf.num + exp.num + c.num > 0){
-                inc.mat.i <- matrix(nrow = inf.num + exp.num + c.num,ncol=3)
+                inc.mat.i <- matrix(nrow = inf.num + exp.num + c.num, ncol=3)
                 inc.mat.i[, 1] <- i
 
                 if(inf.num != 0){
@@ -182,24 +182,24 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
             allzone <- as.matrix(as.data.table(allzone)[,.SD[1],by='V5'][,paste0('V', seq(5))])
             Tculled[i] <- culled
 
-            #compile optional outputs
+            # compile optional outputs
             if("idzone" %in% out.opts){
-                #get list index
+                # get list index
                 idz <- detectday - i
                 if(idz==1){
                     idzone.mat.idz <- idZONE[, 2]
                     idzone.mat <- cbind(idzone.mat.idz, rep(i, length=length(idzone.mat.idz)))
                     colnames(idzone.mat) <- c("cell","timestep")
                 } else {
-                    #only store new locations
+                    # only store new locations
                     idzone.mat.idz <- idZONE[, 2][which(!(idZONE[, 2]) %in% idzone.mat[, 1])]
                     idzone.mat.idz <- cbind(idzone.mat.idz, rep(i, length=length(idzone.mat.idz)))
                     colnames(idzone.mat.idz)=c("cell","timestep")
                 }
             }
-        } else { #if greater than detectday closing bracket
+        } else { # if greater than detectday closing bracket
             Ct[i, 1] <- 0
-        } #else if not greater than detect day
+        } # else if not greater than detect day
 
 #############################
 ####Track true spatial spread
@@ -240,14 +240,14 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
         names(input.opts)[length(input.opts)] <- "loc.list"
     }
 
-    if("idzone"%in%out.opts){
+    if("idzone" %in% out.opts){
         templist <- vector(mode="list",length=1)
         templist[[1]] <- idzone.mat
         input.opts <- append(input.opts,templist)
         names(input.opts)[length(input.opts)] <- "idzone.mat"
     }
 
-    if("alldetections"%in%out.opts){
+    if("alldetections" %in% out.opts){
         templist <- list(POSlive)    # directly create a list with POSlive
         input.opts <- append(input.opts, templist)
         names(input.opts)[length(input.opts)] <- "POSlive"

@@ -23,8 +23,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     incidence[,max.time := max(timestep), by=.(var, rep, land)]
     detections <- as.data.table(out.list["detections"])
     setnames(detections, unlist(lapply(strsplit(names(detections), 'detections.'), function(x) unlist(x)[2])))
+    detections[,max.time:=0]
     if(nrow(detections) > 0) {
-        detections[,max.time := max(timestep), by=.(var, rep, land)]
+        detections[,max.time := max(time), by=.(var, rep, land)]
         unq.det <- unique(detections[, .(var, land, rep, timestep, loc, max.time, code, detected)])
     }
     allzones <- as.data.table(out.list["allzone"])
@@ -33,6 +34,8 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     setnames(solocs.all, unlist(lapply(strsplit(names(solocs.all), 'solocs.all.'), function(x) unlist(x)[2])))
     setnames(solocs.all, c('x','y'), c('ctX','ctY'))
     solocs.all[,nlive := S+E+I+R]
+    wv.speed <- as.data.table(out.list['wv.speed'])
+    setnames(wv.speed, unlist(lapply(strsplit(names(wv.speed), 'wv.speed.'), function(x) unlist(x)[2])))
 
 
     # generate an image for environment quality grid
@@ -219,25 +222,25 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     radius = parameters['Rad']
 #     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
-    if (radius != 0){
+#     if (radius != 0 & detectday < thyme){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
-        unq.detections <- unique(detections[,.(var,land,rep,timestep,loc,max.time,detected)])
+        unq.detections <- unique(detections[,.(var,land,rep,time,loc,max.time,detected)])
 
         unq.incidence <- unique(incidence[,.(var,land,rep,timestep,loc,max.time)])
         unq.incidence[,is.inf := 1]
         unq.incidence[,loc.min := min(timestep), by=.(var, land, rep, loc)]
         unq.incidence[,loc.max := max(timestep), by=.(var, land, rep, loc)]
         unq.join <- CJ(timestep=seq(parameters[['thyme']]),
-                 var=unique(unq.incidence[,var]),
-                 land=unique(unq.incidence[,land]),
-                 rep=unique(unq.incidence[,rep]),
-                 loc=unique(unq.incidence[,loc]))
+                    var=unique(unq.incidence[,var]),
+                    land=unique(unq.incidence[,land]),
+                    rep=unique(unq.incidence[,rep]),
+                    loc=unique(unq.incidence[,loc]))
         unq.join <- unq.join[!unq.incidence, on=.(var, land, rep, timestep, loc)]
         unq.join[, is.inf := 0]
         unq.join <- unq.join[unique(unq.incidence[,.(var, land, rep, loc, loc.min, loc.max, max.time)]), on=.(var, land, rep, loc)]
         unq.join <- unq.join[timestep >= loc.min,]
-#         unq.join <- unq.join[timestep <= loc.max & timestep >= loc.min,]
+    #         unq.join <- unq.join[timestep <= loc.max & timestep >= loc.min,]
         unq.incidence <- rbind(unq.incidence, unq.join)
 
         unq.incidence[,loc.min := NULL]
@@ -245,41 +248,40 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         setorder(unq.incidence, var, land, rep, timestep, loc)
         unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
 
-#         browser()
-#         unq.combos <- unq.combos[var == 7 & rep == 2,]
+    #         unq.combos <- unq.combos[var == 7 & rep == 2,]
         mapply(function(i, j, k){
             sub.incidence <- unique(unq.incidence[var == i & land == j & rep == k & loc != 0,.(timestep, loc, is.inf)])[grid.centers.out[land==j,], on=.(loc = cell), nomatch=NULL] # gets rid of code column
-            sub.detections <- unique(unq.detections[var == i & land == j & rep == k & detected != 0,.(timestep, loc)])[grid.centers.out[land==j,], on=.(loc = cell), nomatch=NULL] # gets rid of code column
-            sub.zones <- allzones[var == i & land == j & rep == k & loc != 0,][grid.centers.out[land==j,], on=.(loc=cell), nomatch=NULL]
+            if(nrow(unq.detections) > 0){ sub.detections <- unique(unq.detections[var == i & land == j & rep == k & detected != 0,.(time, loc)])[grid.centers.out[land==j,], on=.(loc = cell), nomatch=NULL] } # gets rid of code column
+            if(nrow(allzones) >0){sub.zones <- allzones[var == i & land == j & rep == k & loc != 0,][grid.centers.out[land==j,], on=.(loc=cell), nomatch=NULL]}
             sub.solocs <- solocs.all[v == i & l == j & r == k,]
             paneldim <- ceiling(sqrt(max(sub.incidence[,timestep])))
             png(paste0('./test_outputs/sptmplot_vars_', i,'_land_', j, '_rep_', k,'.png'), width=2000, height=2000)
             par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
             lapply(seq(max(sub.incidence[,timestep])), function(x){
-                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100))
-                points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow')#, cex=1.2, xlim=c(0,100), ylim=c(0,100))
-#                 points(y ~ x, data=sub.solocs[timestep == x,], pch=1, col='gray')
-#                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
+                plot(ctY ~ ctX, data=sub.solocs[time == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100))
+                if(nrow(allzones) > 0){points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow')}#, cex=1.2, xlim=c(0,100), ylim=c(0,100))
+    #                 points(y ~ x, data=sub.solocs[timestep == x,], pch=1, col='gray')
+    #                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
-                if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
+                if (x > detectday & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
             })
             dev.off()
 
             library(animation)
             plot.step <- function(x){
                 panels <- layout(matrix(c(1, 1, 1, 2, 3, 4), nrow=3, ncol=2), widths=c(3, 1), heights=c(1, 1, 1), respect=FALSE)
-                plot(ctY ~ ctX, data=sub.solocs[timestep == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[timestep==x, nlive]))
-                points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch=3, col='yellow')
+                plot(ctY ~ ctX, data=sub.solocs[time == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[time==x, nlive]))
+                if(nrow(allzones) > 0) points(ctY ~ ctX, data=sub.zones[time <= x,], pch=3, col='yellow')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
-                if (x > detectday) points(ctY ~ ctX, data=sub.detections[timestep <= x,], pch=2, col='blue')
-                plot(allnlive ~ timestep, data=sub.solocs[, allnlive := sum(nlive), by=timestep][order(timestep)], main='Live pigs', type='l')
-                points(allnlive ~ timestep, data=sub.solocs[timestep==x,], pch=1, cex=2)
+                if (x > detectday & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
+                plot(allnlive ~ time, data=sub.solocs[, allnlive := sum(nlive), by=time][order(time)], main='Live pigs', type='l')
+                points(allnlive ~ time, data=sub.solocs[time==x,], pch=1, cex=2)
                 plot(allnlive ~ timestep, data=unique(sub.incidence[, allnlive := sum(is.inf), by=timestep][,.(timestep, allnlive)])[order(timestep)], main='Infected cells', type='l', col='red')
                 points(allnlive ~ timestep, data=sub.incidence[timestep==x,], pch=3, col=2, cex=2)
-                if (nrow(sub.detections) > 0){
-                    temp.detect <- unique(sub.detections[, allnlive := length(unique(loc)), by=timestep][,.(timestep, allnlive)])[order(timestep)][,cs:=cumsum(allnlive)]
-                    plot(cs ~ timestep, data=temp.detect, main='Detections', type='l', col='blue')
-                    points(cs ~ timestep, data=temp.detect[timestep==x, ], pch=2, col='blue', cex=2)
+                if (exists('sub.detections')){
+                    temp.detect <- unique(sub.detections[, allnlive := length(unique(loc)), by=time][,.(time, allnlive)])[order(time)][,cs:=cumsum(allnlive)]
+                    plot(cs ~ time, data=temp.detect, main='Detections', type='l', col='blue')
+                    points(cs ~ time, data=temp.detect[time==x, ], pch=2, col='blue', cex=2)
                 }
             }
             out.gif <- paste0('testgif_vars_', i, '_land_', j, '_rep_', k, '.gif')
@@ -289,6 +291,37 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         }, i=unq.combos[,var], j=unq.combos[,land], k=unq.combos[,rep])
 
         # moves gifs to the proper folder
-        #lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
-    }
+        lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
+#     }
+
+
+    ## wavespeed stuff
+    png('./test_outputs/wavespeed.png', width=1200, height=1400)
+    par(mfrow=c(2,2), oma=c(8,1.2,0.2,0.2))
+    avg.wave <- dcast(wv.speed, time~ v+l, value.var='avg', fun.aggregate=mean, fill=NA)
+    matplot(avg.wave[,2:ncol(avg.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
+            ylab='avg dist from source', xlab='week', main='Avg dist from introduction')
+    max.dist.wave <- dcast(wv.speed, time~ v+l, value.var='max', fun.aggregate=max, fill=NA)
+    matplot(max.dist.wave[,2:ncol(max.dist.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
+            ylab='max dist from source', xlab='week', main='Max dist from introduction')
+    spd.wave <- dcast(wv.speed, time~ v+l, value.var='avg.dist.diff', fun.aggregate=mean, fill=NA)
+    matplot(spd.wave[,2:ncol(spd.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
+            ylab='km/week', xlab='week', main='Avg. wave speed from introduction')
+    pk.dist <- dcast(wv.speed[order(v,l,r,time,-tot.inf)][,.SD[1], by=.(v,l,r,time)], time~ v+l, value.var=c('tot.inf','dist'), fun.aggregate=mean, fill=NA)
+    matplot(pk.dist[,.SD,.SDcols=patterns('^dist')], pk.dist[,.SD,.SDcols=patterns('^tot')], type='b', col=rep(1:nrow(variables), each=length(land_grid_list)), lty=1, pch=seq(length(land_grid_list)),
+            ylab='peak intensity (E+I+C)', xlab='peak distance', main='Peak intensity vs. distance by timestep')
+
+    par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
+    plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+    legend("bottom", legend=c('vars:', 1:nrow(variables), 'land:', seq(length(land_grid_list))),
+           lty=c(NA, rep(1,nrow(variables)), NA, rep(1,length(land_grid_list))),
+           col=c(NA, seq(nrow(variables)), NA, rep(1, length(land_grid_list))),
+           pch=c(rep(NA, 2+nrow(variables)), seq(length(land_grid_list))),
+           horiz=TRUE, bty='n', cex=1.3, lwd=2)
+
+    dev.off()
+
+
+    ## Plot movement and density input parameters, with z response of spatial spread rate and maximum incidence
+
 }

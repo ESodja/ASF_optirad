@@ -64,18 +64,13 @@ list(
     ### Input landscapes directory: -----------
     tar_target(lands_path, file.path("Input","lands"), format="file"),
 
-    ### Input landscape predictions: -----------
-#     tar_target(landmat_path, file.path("Input","ldsel.rds"), format="file"), ## unused
-
     ## Read and format input data -----
     tar_terra_sprc(plands_sprc, ReadLands(lands_path)),
-#     tar_target(landmat, ReadRDS(landmat_path)), ## unused
 
     ### Read and format parameters file: -----------
     tar_target(parameters0, FormatSetParameters(parameters_txt)),
 
     tar_target(variables, SetVarParms(parameters0)),
-    tar_target(parameters00, RemoveRedundantParms(parameters0)),
 
     ## Input cpp scripts as files to enable tracking -----
     tar_target(Fast_FOI_Matrix_script, file.path("Scripts","cpp_Functions","Fast_FOI_Matrix.cpp"), format="file"),
@@ -107,73 +102,48 @@ list(
     ## makes the grid.opt parameters functional to choose lands variation... shifted grid.opts = "heterogeneous" to be randomized landscape (was "random" before, but unlisted)
     ## ugly, but functional:
     ## should probably move this to the InitializeGrids file
-    tar_target(land_grid_list, {if (parameters00$pop_init_grid_opts == 'homogeneous'){
-                                  if(parameters00$grid.opts != 'ras'){ ## if grid.opts is homogeneous or heterogeneous
-                                    ## make a grid either uniform or random with even initial pig locations
-                                    InitializeGrids(c(parameters00$len, parameters00$inc), parameters00$grid.opt)
-                                  } else if (parameters00$grid.opts == 'ras'){ ## if there is an input raster
-                                    InitializeGrids(plands_sprc, parameters00$grid.opts)
+    tar_target(land_grid_list, {if (parameters0$pop_init_grid_opts == 'homogeneous'){
+                                  if(parameters0$grid.opts != 'ras'){ # if grid.opts is homogeneous or heterogeneous
+                                    # make a grid either uniform or random with even initial pig locations
+                                    InitializeGrids(c(parameters0$len, parameters0$inc), parameters0$grid.opt)
+                                  } else if (parameters0$grid.opts == 'ras'){ # if there is an input raster
+                                    InitializeGrids(plands_sprc, parameters0$grid.opts)
                                   }
-                                } else if (parameters00$pop_init_grid_opts == 'heterogeneous'){
-                                  ## make a grid with uneven pig initial locations...
-                                    if (parameters00$grid.opts == 'homogeneous') {
-                                      ## can't do neutral plane with random pig distribution
+                                } else if (parameters0$pop_init_grid_opts == 'heterogeneous'){
+                                    # make a grid with uneven pig initial locations...
+                                    if (parameters0$grid.opts == 'homogeneous') {
+                                      # can't do neutral plane with random pig distribution
                                       stop('Cannot run homogeneous grid.opts with heterogeneous pop_init_grid_opts')
-                                    } else if (parameters00$grid.opts == 'heterogeneous'){
-                                      ## random pig distribution with random landscape
-                                      InitializeGrids(c(parameters00$len, parameters00$inc), parameters00$grid.opt)
-                                    } else if (parameters00$grid.opts == 'ras'){
-                                      ## random pig distribution with raster landscape
-                                      InitializeGrids(plands_sprc, parameters00$grid.opts)
+                                    } else if (parameters0$grid.opts == 'heterogeneous'){
+                                      # random pig distribution with random landscape
+                                      InitializeGrids(c(parameters0$len, parameters0$inc), parameters0$grid.opt)
+                                    } else if (parameters0$grid.opts == 'ras'){
+                                      # random pig distribution with raster landscape
+                                      InitializeGrids(plands_sprc, parameters0$grid.opts)
                                     }
                                 }
                               }),
 
     ### Get surface parameters: ---------------
-    tar_target(parameters, GetSurfaceParms(parameters00, plands_sprc[1])),
+    tar_target(parameters, GetSurfaceParms(parameters0, plands_sprc[1])),
 
-    ## Find Mortality parameter value that gives target density:
-#     tar_target(variables,
-#         FindMortVal(land_grid_list = land_grid_list,
-#                     parameters = parameters,
-#                     variables = variables1,
-#                     cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
-#         )
-# #         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
-#     ),
-    ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-    ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source); FindMortVal(tar_read(land_grid_list), tar_read(parameters), tar_read(variables1), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)))}
-
-    ## Run Burn-In:
-#     tar_target(burn.list,
-#         RunBurnIn(land_grid_list = land_grid_list,
-#                     parameters = parameters,
-#                     variables = variables,
-#                     cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script)
-#         )
-# #         , cue = tar_cue(seed = FALSE) # allows existing burn-in outputs to stand despite having stochastic elements, so long as inputs are the same
-#     ),
-    ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-    ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source); RunBurnIn(tar_read(land_grid_list), tar_read(parameters), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)))}
-
-  ## Run Model ---------------
+    ## Run Model ---------------
     tar_target(out.list,
         RunSimulationReplicates(land_grid_list = land_grid_list,
                                 parameters = parameters,
                                 variables = variables,
                                 cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script),
-                                reps = parameters$nrep#,
-#                                 burn.list = burn.list
+                                reps = parameters$nrep
         )
 #         , cue = tar_cue(seed = FALSE) # allows existing simulation outputs to stand despite having stochastic elements, so long as inputs are the same
     ),
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters00), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)}#, tar_read(burn.list)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters0), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)}#, tar_read(burn.list)) }
 
 
-    tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters00))
+    tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters))
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {source('./Scripts/R_functions/VisualOutputs.R') ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters00)) }
+      ## {source('./Scripts/R_functions/VisualOutputs.R') ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters)) }
 
 
 ) # end targets list
