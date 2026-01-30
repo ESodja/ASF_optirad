@@ -44,7 +44,7 @@ StateChanges <- function(pop, centroids, cells, parameters, Incidence, BB, i){
     liverows <- which(pop[, 8, drop=FALSE] > 0 | pop[, 9, drop=FALSE] > 0 | pop[, 11, drop=FALSE] > 0) #rownums with live indiv
 
     # density-dependent birth rate
-    Brate <- Pbd * rowSums(pop[, c(8,9,11)]) * (1 - sum(pop[, c(8, 9, 11)]) / K)
+    Brate <- Pbd * rowSums(pop[, c(8, 9, 11)]) * (1 - sum(pop[, c(8, 9, 11)]) / K)
     Sdpb <- pmin(10 * rowSums(pop[, c(8, 9, 11)]), rnbinom(nrow(pop), mu = Brate, size = 0.01))
 
     # get total births, using Brate as mean in a poisson
@@ -56,25 +56,25 @@ StateChanges <- function(pop, centroids, cells, parameters, Incidence, BB, i){
     Pse[Pse < 0] <- 0
 
     # Exposed to infected
-    Pei <- 1 - exp(-1 / (rpois(cells, 4) / 7))
+    Pei <- 1 - exp(-1 / (rpois(nrow(pop), 4) / 7))
 
     # Infected to contageous corpse or recovered, depending on Pir (recovery rate)
-    Pic <- 1 - exp(-1 / (rpois(cells, 5) / 7))
+    Pic <- 1 - exp(-1 / (rpois(nrow(pop), 5) / 7))
 
     ######## Conduct the State Transitions ########
     # susceptible state changes
     Sdpd <- rbinom(nrow(pop), pop[, 8], death)
-    Eep <- rbinom(nrow(pop), pop[, 8] - Sdpd, Pse[pop[, 3]])
+    Eep <- rbinom(nrow(pop), pop[, 8] - Sdpd, Pse)
 
     # exposed state changes
     Edpd <- rbinom(nrow(pop), pop[, 9], death)
     # exposed -> infected
-    Iep <- rbinom(nrow(pop), pop[, 9] - Edpd, Pei[pop[, 3]])
+    Iep <- rbinom(nrow(pop), pop[, 9] - Edpd, Pei)
 
     # infected state changes
-    Rep <- rbinom(nrow(pop), pop[, 10], Pir * Pic[pop[, 3]])
+    Rep <- rbinom(nrow(pop), pop[, 10], Pir * Pic)
     # infected -> contageous carcass
-    Cep <- pop[, 10] - Rep
+    Cep <- rbinom(nrow(pop), pop[, 10] - Rep, (1-Pir)*Pic)
 
     # recovered state changes
     Rdpd <- rbinom(nrow(pop), pop[, 11], death)

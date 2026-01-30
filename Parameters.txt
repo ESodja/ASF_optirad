@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 78
+~ thyme = 18
 
 ############################
 #### Movement parameters ###
@@ -109,7 +109,7 @@ For now, sounder size (ss) and probability of infection given contact (B1) will 
 		density 3, ss=4, B1=0.004
 		density 5, ss=6, B1=0.002
 
-B2?? automatically calculated as B1*0.5 ## has been calculated as B1*2 in _targets.R
+B2 automatically calculated as B1*0.5
 
 density = 1.5
 
@@ -146,7 +146,9 @@ pop_init_grid_opts = "ras"
 #################################
 * detectday, Timestep of simulation to start surveillance. Yes it's named 'detectday' even though timesteps are in weeks.
 
-~ detectday = 20
+### for no culling or detection for the duration
+~ detectday = 9999
+detectday = 20
   
 * DetP, probability of infected pigs sampled as positive. for now, is just used as an input in some of the sounderlocs output processing steps. later, may be integrated into culling/surveillance process within simulation.
 
@@ -253,42 +255,23 @@ state = c("FL")
 ~ state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
-~ B1__FL = c(0.9, 0.2)
-B1__FL = c(0.9, 0.4, 0.2)
+B1__FL = c(0.9, 0.2)
+~ B1__FL = c(0.9, 0.4, 0.2)
 
 ~ shape__SC = 0.5657
 ~ rate__SC = 1.9082
 B1__SC = c(0.004)
-~ B1__SC = c(0.009, 0.002)
-B1__SC = c(0.009, 0.004, 0.002)
+B1__SC = c(0.009, 0.002)
+~ B1__SC = c(0.009, 0.004, 0.002)
 
 ~ B2_B1_factor = 0.5
 density = c(1.5)
-~ density = c(1.5, 5)
-density = c(1.5, 3, 5)
+density = c(1.5, 5)
+~ density = c(1.5, 3, 5)
 ss = c(2)
-~ ss = c(2, 6)
-ss = c(2, 4, 6)
+ss = c(2, 6)
+~ ss = c(2, 4, 6)
 
-
-
-
-	"shape_rate"=data.frame(
-        "state"=c("FL","SC"),
-		"shape"=c(0.7515,0.5657),
-		"rate"=c(0.3550,1.9082)
-		),
-    "B1_B2"=data.frame(
-		"state"=c(rep(c('FL','SC'), each=3)),
-		"B1"=c(0.9,0.4,0.2,0.009,0.004,0.002),
-		"B2"=c(0.9/2, 0.4/2, 0.2/2, 0.009/2, 0.004/2, 0.002/2)
-		)
-
-
-~ burn_weeks = 100
-
-# mort_val_test is a range of values to calibrate the burin to get the value of mort_val that should be included to get the target density from the burn-in
-~ mort_val_test = c(0.0001, 0.5)
 
 
 

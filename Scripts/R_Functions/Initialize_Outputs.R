@@ -9,54 +9,53 @@ Initialize_Outputs<-function(parameters){
     #pull needed items from parameters
     thyme <- parameters$thyme
     out.opts <- parameters$out.opts
-    burn_weeks <- parameters$burn_weeks
 
-#     Nall <- matrix(nrow=thyme + burn_weeks) #track total abundance
-    BB <- matrix(nrow=thyme + burn_weeks) #track births
+#     Nall <- matrix(nrow=thyme) #track total abundance
+    BB <- matrix(nrow=thyme) #track births
 
-    POSlive <- as.list(rep(0, thyme + burn_weeks)) #Positive cases observed and removed from landscape
-    POSdead <- as.list(rep(0, thyme + burn_weeks))#Positive carcasses observed and removed from landscape
-    NEGlive <- as.list(rep(0, thyme + burn_weeks)) #Negative tests of detected carcasses that are removed from landscape
-    NEGdead <- as.list(rep(0, thyme + burn_weeks)) #Negative tests of carcasses that are removed from landscape
-    pigs_sampled_timestep <- as.list(rep(0, thyme + burn_weeks))    # Initialize an empty list to hold the number of pigs sampled at each timestep
-    Ct <- matrix(nrow=thyme + burn_weeks,ncol=1) #effective removal rate
+    POSlive <- as.list(rep(0, thyme)) #Positive cases observed and removed from landscape
+    POSdead <- as.list(rep(0, thyme))#Positive carcasses observed and removed from landscape
+    NEGlive <- as.list(rep(0, thyme)) #Negative tests of detected carcasses that are removed from landscape
+    NEGdead <- as.list(rep(0, thyme)) #Negative tests of carcasses that are removed from landscape
+    pigs_sampled_timestep <- as.list(rep(0, thyme))    # Initialize an empty list to hold the number of pigs sampled at each timestep
+    Ct <- matrix(nrow=thyme,ncol=1) #effective removal rate
 
-    POSlive_locs<-as.list(rep(0, thyme + burn_weeks))
-    POSdead_locs<-as.list(rep(0, thyme + burn_weeks))
+    POSlive_locs<-as.list(rep(0, thyme))
+    POSdead_locs<-as.list(rep(0, thyme))
 
     idZONE <- matrix(nrow=1,ncol=3) #grid cell ids that had a positive detection, grid cell ids that are within the zone, distance
-    #idZONE<-as.list(rep(NA,thyme + burn_weeks)) #comment out of list mar 28
-    Tculled <- matrix(0, nrow=thyme + burn_weeks) #total number culled at each time step
-    ZONEkm2 <- matrix(0, nrow=thyme + burn_weeks)
-    Carea <- matrix(0, nrow=thyme + burn_weeks) #area of culling zone at each time step
-    Spread <- matrix(0, nrow=thyme + burn_weeks, ncol=3) #number of infectious individuals, area of infection, max distance between any two cases
-    Incidence <- matrix(0, nrow=thyme + burn_weeks) #store new cases for each time step
-    I_locs <- vector("list",thyme + burn_weeks)
-    C_locs <- vector("list",thyme + burn_weeks)
-    removalcells <- vector("list",thyme + burn_weeks)
-    I_locs[1:(thyme + burn_weeks)] <- 0
-    C_locs[1:(thyme + burn_weeks)] <- 0
-    Isums <- matrix(0, nrow=thyme + burn_weeks)
-    Csums <- matrix(0, nrow=thyme + burn_weeks)
-    out <- matrix(c(0,0,0),nrow=thyme + burn_weeks,ncol=3)
-    ICtrue <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
+    #idZONE<-as.list(rep(NA,thyme)) #comment out of list mar 28
+    Tculled <- matrix(0, nrow=thyme) #total number culled at each time step
+    ZONEkm2 <- matrix(0, nrow=thyme)
+    Carea <- matrix(0, nrow=thyme) #area of culling zone at each time step
+    Spread <- matrix(0, nrow=thyme, ncol=3) #number of infectious individuals, area of infection, max distance between any two cases
+    Incidence <- matrix(0, nrow=thyme) #store new cases for each time step
+    I_locs <- vector("list",thyme)
+    C_locs <- vector("list",thyme)
+    removalcells <- vector("list",thyme)
+    I_locs[1:(thyme)] <- 0
+    C_locs[1:(thyme)] <- 0
+    Isums <- matrix(0, nrow=thyme)
+    Csums <- matrix(0, nrow=thyme)
+    out <- matrix(c(0,0,0),nrow=thyme,ncol=3)
+    ICtrue <- matrix(0, nrow=thyme,ncol=1)
 
     #State change outputs when needed
     #list(pop,Incidence,BB,"Eep"=Eep,"Sdpb"=Sdpb,"Sdpd"=Sdpd,"Iep"=Iep,"Edp"=Edpd,"Rep"=Rep,"Cep"=Cep,"Rdp"=Rdpd,"Ccd"=Ccd,"Zcd"=Zcd)
-    Eep_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Sdpb_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Sdpd_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Iep_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Rep_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Cep_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Rdpd_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Ccd_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
-    Zcd_mat <- matrix(0, nrow=thyme + burn_weeks,ncol=1)
+    Eep_mat <- matrix(0, nrow=thyme,ncol=1)
+    Sdpb_mat <- matrix(0, nrow=thyme,ncol=1)
+    Sdpd_mat <- matrix(0, nrow=thyme,ncol=1)
+    Iep_mat <- matrix(0, nrow=thyme,ncol=1)
+    Rep_mat <- matrix(0, nrow=thyme,ncol=1)
+    Cep_mat <- matrix(0, nrow=thyme,ncol=1)
+    Rdpd_mat <- matrix(0, nrow=thyme,ncol=1)
+    Ccd_mat <- matrix(0, nrow=thyme,ncol=1)
+    Zcd_mat <- matrix(0, nrow=thyme,ncol=1)
 
     ##Initialize out.opts objects as needed
     if("sounderlocs"%in%out.opts){
         #Initialize list to track locations
-        loc.list <- vector(mode="list",length=thyme + burn_weeks)
+        loc.list <- vector(mode="list",length=thyme)
     }
 
     if("idzone"%in%out.opts){
@@ -67,7 +66,7 @@ Initialize_Outputs<-function(parameters){
     if("alldetections" %in% out.opts){
         detections <- matrix(nrow=0, ncol=7)
         allzone <- matrix(nrow=0, ncol=5)
-    #     allzone<-as.list(rep(0, thyme + burn_weeks))
+    #     allzone<-as.list(rep(0, thyme))
     }
 
     if("incidence" %in% out.opts){

@@ -82,9 +82,9 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
             # get locations
             locs.i <- as.data.table(centroids[matrix(loc.list[[i]], ncol=7)[,1], , drop=FALSE])
             # add timestep and state variable values to locs.i
-            locs.i <- cbind(i, locs.i, loc.list[[i]][,2:7])
+            locs.i <- cbind(i, locs.i, loc.list[[i]][, 2:7])
             # set names for output
-            colnames(locs.i) <- c("time",c("x","y","unknown")[seq(ncol(locs.i))], c('S','E','I','R','C','Z'))
+            colnames(locs.i) <- c("time", "x", "y", "unknown", 'S', 'E', 'I', 'R', 'C', 'Z')
             return(locs.i)
         }))
     }
@@ -98,18 +98,14 @@ GetOutputs <- function(pop, centroids, BB, Incidence, Tculled, ICtrue, out, dete
         POSdead_locs <- input.opts$POSdead_locs
         allzone <- input.opts$allzonecells
 
-        detections <- rbindlist(lapply(1:length(POSlive), function(i)){
+        detections <- rbindlist(lapply(1:length(POSlive), function(i){
             live.detections.i <- data.table(i, 1, POSlive[[i]], POSlive_locs[[i]])
-
             # Create dead detections after live detections are populated
             dead.detections.i <- data.table(i, 0, POSdead[[i]], POSdead_locs[[i]])
-
             # Combine live and dead detections into detections.i
             detections.i <- rbind(live.detections.i, dead.detections.i)
-
-            # Add the combined detections to the final detections matrix
-            detections <- rbind(detections, detections.i)
-        })
+            return(detections.i)
+        }))
 
         # Now, outside of the loop, check if sample == 1 to combine live detections with sampled pigs
         if (sample == 1) {

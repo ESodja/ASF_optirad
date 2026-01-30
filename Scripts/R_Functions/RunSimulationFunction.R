@@ -28,7 +28,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     list2env(parameters, .GlobalEnv)
 
     # looping table for mapply
-    lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep=seq(reps))
+    lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep = seq(reps))
 
     # loops over combinations of variables, lands, and reps
     rep.list <- mapply(function(v.val, l.val, r.val){
@@ -52,8 +52,8 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         pop <- InitializeInfection(pop, centroids, grid, parameters)
         # pre-create outputs to catch output data
         outputs <- Initialize_Outputs(parameters)
-        # Do simulations
-        out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r.val, 0)
+        # Run simulation
+        out.list <- SimulateOneRun(outputs, pop, centroids, grid, parameters, cpp_functions, K, v.val, l.val, r.val)
         # Handle outputs
         rep.out <- rep_outputs(out.list, v.val, l.val, r.val, parameters, out.opts)
         return(rep.out)
@@ -67,7 +67,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     allzone <- rbindlist(lapply(rep.list[5,][!is.na(rep.list[5,])], as.data.table))
     solocs.all <- rbindlist(rep.list[6,])
 
-    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone, 'solocs.all' = solocs.all))
+    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone, 'solocs.all' = solocs.all))#, 'wv.speed' = wv.speed))
 }
 
 
