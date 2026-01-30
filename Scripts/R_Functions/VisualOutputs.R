@@ -20,10 +20,10 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     summ.vals <- summ.vals[!is.na(endtime)]
     incidence <- as.data.table(out.list["incidence"])
     setnames(incidence, unlist(lapply(strsplit(names(incidence), 'incidence.'), function(x) unlist(x)[2])))
-    incidence[,max.time := max(timestep), by=.(var, rep, land)]
+    incidence[, max.time := max(timestep), by=.(var, rep, land)]
     detections <- as.data.table(out.list["detections"])
     setnames(detections, unlist(lapply(strsplit(names(detections), 'detections.'), function(x) unlist(x)[2])))
-    detections[,max.time:=0]
+    detections[, max.time := 0]
     if(nrow(detections) > 0) {
         detections[,max.time := max(time), by=.(var, rep, land)]
         unq.det <- unique(detections[, .(var, land, rep, timestep, loc, max.time, code, detected)])
@@ -34,7 +34,9 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     setnames(solocs.all, unlist(lapply(strsplit(names(solocs.all), 'solocs.all.'), function(x) unlist(x)[2])))
     setnames(solocs.all, c('x','y'), c('ctX','ctY'))
     solocs.all[,nlive := S+E+I+R]
-    wv.speed <- as.data.table(out.list['wv.speed'])
+
+    wv.speed <- wave_speed(solocs.all)
+#     wv.speed <- as.data.table(out.list['wv.speed'])
     setnames(wv.speed, unlist(lapply(strsplit(names(wv.speed), 'wv.speed.'), function(x) unlist(x)[2])))
 
 
@@ -126,7 +128,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         points(ctY ~ ctX, data=grid.centers.out[land==lnd,], col=terrain.colors(5, rev=TRUE)[grid.centers.out[land==lnd,rasval*10]], pch=15)
         dev.off()
     })
-    browser()
+#     browser()
 
     ### timing and extent of incidence/detections
     # connect incidence with cell locations
@@ -222,7 +224,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     radius = parameters['Rad']
 #     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
-#     if (radius != 0 & detectday < thyme){
+    if (radius != 0 & detectday < thyme){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
         unq.detections <- unique(detections[,.(var,land,rep,time,loc,max.time,detected)])
@@ -292,24 +294,39 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
         # moves gifs to the proper folder
         lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
-#     }
+    }
 
 
     ## wavespeed stuff
-    png('./test_outputs/wavespeed.png', width=1200, height=1400)
-    par(mfrow=c(2,2), oma=c(8,1.2,0.2,0.2))
+#     png('./test_outputs/wavespeed.png', width=1200, height=1400)
+    browser()
+    par.og <- par(mfrow=c(2,3), oma=c(8,1.2,0.2,0.2), mar=c(4,4,1,1))
+    edge.interactions <- unique(wv.speed[x==0.25 | y==0.25 | x==99.75 | y==99.75, .(v,l,r,time)])
+    wv.speed <- edge.interactions[,edge := 1][wv.speed, on=.NATURAL]
     avg.wave <- dcast(wv.speed, time~ v+l, value.var='avg', fun.aggregate=mean, fill=NA)
     matplot(avg.wave[,2:ncol(avg.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
             ylab='avg dist from source', xlab='week', main='Avg dist from introduction')
     max.dist.wave <- dcast(wv.speed, time~ v+l, value.var='max', fun.aggregate=max, fill=NA)
     matplot(max.dist.wave[,2:ncol(max.dist.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
             ylab='max dist from source', xlab='week', main='Max dist from introduction')
-    spd.wave <- dcast(wv.speed, time~ v+l, value.var='avg.dist.diff', fun.aggregate=mean, fill=NA)
+    spd.wave <- dcast(unique(wv.speed[,.(v,l,r,time,avg.dist.diff)]), time~ v+l, value.var='avg.dist.diff', fun.aggregate=mean, fill=NA)
     matplot(spd.wave[,2:ncol(spd.wave)], type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
-            ylab='km/week', xlab='week', main='Avg. wave speed from introduction')
+            ylab='km/week', xlab='week', main='Avg. wave speed from introduction point')
+    abline(h=0, col='grey')
     pk.dist <- dcast(wv.speed[order(v,l,r,time,-tot.inf)][,.SD[1], by=.(v,l,r,time)], time~ v+l, value.var=c('tot.inf','dist'), fun.aggregate=mean, fill=NA)
-    matplot(pk.dist[,.SD,.SDcols=patterns('^dist')], pk.dist[,.SD,.SDcols=patterns('^tot')], type='b', col=rep(1:nrow(variables), each=length(land_grid_list)), lty=1, pch=seq(length(land_grid_list)),
+    matplot(log1p(pk.dist[,.SD,.SDcols=patterns('^dist')]), log1p(pk.dist[,.SD,.SDcols=patterns('^tot')]), type='b', col=rep(1:nrow(variables), each=length(land_grid_list)), lty=1, pch=seq(length(land_grid_list)),
             ylab='peak intensity (E+I+C)', xlab='peak distance', main='Peak intensity vs. distance by timestep')
+
+    inf.cells1 <- unique(wv.speed[,tot.inf.cells := length(tot.inf), by=.(v,l,r,time)][,.(v,l,r,time,tot.inf.cells)])
+    inf.cells <- dcast(inf.cells1, time ~ v+l, value.var='tot.inf.cells', fun.aggregate=mean, fill=NA)
+    matplot(log1p(inf.cells[,2:ncol(inf.cells)]), type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
+            ylab='log(1+tot. infected cells)', xlab='week', main='Infected cells over time')
+
+    inf.indiv1 <- unique(wv.speed[,tot.inf.indiv := sum(tot.inf), by=.(v,l,r,time)][,.(v,l,r,time,tot.inf.indiv)])
+    inf.indiv <- dcast(inf.indiv1, time ~ v+l, value.var='tot.inf.indiv', fun.aggregate=mean, fill=NA)
+    matplot(log1p(inf.indiv[,2:ncol(inf.indiv)]), type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
+            ylab='log(1+tot. infected individuals E+I+C)', xlab='week', main='Infected individuals over time')
+
 
     par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
     plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
@@ -319,9 +336,39 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
            pch=c(rep(NA, 2+nrow(variables)), seq(length(land_grid_list))),
            horiz=TRUE, bty='n', cex=1.3, lwd=2)
 
-    dev.off()
+#     dev.off()
 
+    par(par.og)
 
     ## Plot movement and density input parameters, with z response of spatial spread rate and maximum incidence
+    browser()
+    # get names of variables that are not connected to state (leaves state, density, B1, and any other user-defined variables)
+    wild.vars <- names(variables)[names(variables) %in% c('ss','B2','shape','rate','F1','F2_int','F2_B','F2i_int','F2i_B') == FALSE]
+    # grab unique combinations of the remaining variables
+    mvden.var <- unique(variables[,..wild.vars])
+
+    # connect to spatial spread rate
+    vl.avg.spd <- apply(spd.wave[,2:ncol(spd.wave)], 2, mean, na.rm=TRUE)
+    vl.avg.spd2 <- data.table(names(vl.avg.spd), vl.avg.spd)
+    vl.avg.spd2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
+    vl.avg.spd2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+
+    # connect to maximum incidence
+    inf.indiv2 <- dcast(inf.indiv1, time ~ v+l, value.var='tot.inf.indiv', fun.aggregate=max, fill=NA)
+    vl.max.inc <- apply(inf.indiv2[,2:ncol(inf.indiv2)], 2, max, na.rm=TRUE)
+    vl.max.inc2 <- data.table(names(vl.max.inc), vl.max.inc)
+    vl.max.inc2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
+    vl.max.inc2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+
+    vl.spd.inc <- vl.max.inc2[vl.avg.spd2, on=.NATURAL][,.(v, l, vl.max.inc, vl.avg.spd)]
+
+    var.spd.inc <- vl.spd.inc[variables[,v:=seq(nrow(variables))], on=.NATURAL]
+
+    par(mfrow=c(2,2))
+    plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='FL max incidence')
+    plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='SC max incidence')
+    plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='FL avg spread rate')
+    plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='SC avg spread rate')
+
 
 }

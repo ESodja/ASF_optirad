@@ -66,9 +66,8 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     detections <- rbindlist(lapply(rep.list[4,][!is.na(rep.list[4,])], as.data.table))
     allzone <- rbindlist(lapply(rep.list[5,][!is.na(rep.list[5,])], as.data.table))
     solocs.all <- rbindlist(rep.list[6,])
-    wv.speed <- wave_speed(solocs.all)
 
-    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone, 'solocs.all' = solocs.all, 'wv.speed' = wv.speed))
+    return(list('tm.mat' = tm.mat, 'summ.vals' = summ.vals, 'incidence' = incidence, 'detections' = detections, 'allzone' = allzone, 'solocs.all' = solocs.all))#, 'wv.speed' = wv.speed))
 }
 
 

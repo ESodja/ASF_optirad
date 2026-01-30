@@ -143,7 +143,7 @@ list(
 
     tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters))
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {source('./Scripts/R_functions/VisualOutputs.R') ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters)) }
 
 
 ) # end targets list

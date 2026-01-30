@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 78
+~ thyme = 18
 
 ############################
 #### Movement parameters ###
@@ -109,7 +109,7 @@ For now, sounder size (ss) and probability of infection given contact (B1) will 
 		density 3, ss=4, B1=0.004
 		density 5, ss=6, B1=0.002
 
-B2?? automatically calculated as B1*0.5 ## has been calculated as B1*2 in _targets.R
+B2 automatically calculated as B1*0.5
 
 density = 1.5
 
@@ -255,22 +255,22 @@ state = c("FL")
 ~ state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
-~ B1__FL = c(0.9, 0.2)
-B1__FL = c(0.9, 0.4, 0.2)
+B1__FL = c(0.9, 0.2)
+~ B1__FL = c(0.9, 0.4, 0.2)
 
 ~ shape__SC = 0.5657
 ~ rate__SC = 1.9082
 B1__SC = c(0.004)
-~ B1__SC = c(0.009, 0.002)
-B1__SC = c(0.009, 0.004, 0.002)
+B1__SC = c(0.009, 0.002)
+~ B1__SC = c(0.009, 0.004, 0.002)
 
 ~ B2_B1_factor = 0.5
 density = c(1.5)
-~ density = c(1.5, 5)
-density = c(1.5, 3, 5)
+density = c(1.5, 5)
+~ density = c(1.5, 3, 5)
 ss = c(2)
-~ ss = c(2, 6)
-ss = c(2, 4, 6)
+ss = c(2, 6)
+~ ss = c(2, 4, 6)
 
 
 
