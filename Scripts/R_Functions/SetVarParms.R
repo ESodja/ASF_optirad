@@ -24,7 +24,8 @@ SetVarParms <- function(parameters){
         names(tab) <- c('state', varname)
         return(tab)
     }
-    B1_tab <- rename.to.state(B1)
+    B1_tab <- as.data.table(rename.to.state(B1))
+    B1_tab[, density := rep(parameters$density, length.out = nrow(B1_tab))]
     canonical.params <- merge(canonical.params, B1_tab, on=state)
     # join user defined variables with canonical parameters
     common.columns <- names(canonical.params)[names(canonical.params) %in% names(temptab)]
@@ -32,8 +33,8 @@ SetVarParms <- function(parameters){
     # calculate B2 (relative to B1)
     result$B2 <- result$B1*parameters$B2_B1_factor
 
-    shape <- unlist(parameters[grep('^shape__',names(parameters))])
-    rate <- unlist(parameters[grep('^rate__',names(parameters))])
+    shape <- unlist(parameters[grep('^shape__', names(parameters))])
+    rate <- unlist(parameters[grep('^rate__', names(parameters))])
     F1 <- unlist(parameters[grep('^F1__', names(parameters))])
     F2_int <- unlist(parameters[grep('^F2_int', names(parameters))])
     F2_B <- unlist(parameters[grep('^F2_B', names(parameters))])
