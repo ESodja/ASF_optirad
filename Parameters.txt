@@ -24,7 +24,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
 ~ nrep = 2
-~ thyme = 18
+~ thyme = 78
 
 ############################
 #### Movement parameters ###
@@ -200,7 +200,7 @@ death = 0.00639
 Using annual survival of 0.56, 1-0.56=1-(1-d_week)^52 -> d_week of 0.011 from Snow 2020 chapter 4
 ~ death = 0.011
 
-Birth rate is probably not this... Based on fig 1 in mayer 2009 p 67 of 304 litters distribtuted thoughout a year, so the quackulation is 304/52 = 5.85 to get litters per week, and then 5.85 l/w /304 litters to get 0.0192 w^-1. But it ignores the underlying rate of reproduction, i.e. the plot is saying how many litters happened in which month (comception vs. the pig word for birth) but not how many total pigs were sampled, only how many litters. It works for seasonality (~10% of conceptions in January, for example) but NOT for birth rate.
+Birth rate is probably not this... Based on fig 1 in mayer 2009 p 67 of 304 litters distribtuted thoughout a year, so the quackulation is 304/52 = 5.85 to get litters per week, and then 5.85 l/w /304 litters to get 0.0192 w^-1. But it ignores the underlying rate of reproduction, i.e. the plot is saying how many litters happened in which month (comception vs. the pig word for birth) but not how many total pigs were sampled, only how many litters. It works for seasonality (~10% of conceptions in January, for example) but NOT for birth rate. Missing the 0's in the population, in other words.
 I would say, based on my reading, that we can assume ~1.5 litters per year (depending on environment... and age) given gestation of about 120 days (100-140, probably average closer to 115) and weaning at about 2 months (1-4 months range) we have a full reproductive cycle of about 180 days or 6 months, so maybe about 2 litters per year. Then litter size tends to be about 5, so we are looking at annual per-capita reproduction of 5 to 10 piglets per individual, depending on litters per year and survival. so I get a reproductive rate of 0.096 (1 litter of 5) to 0.192 (2 litters of 5) per reproductive female. that is a lot higher than the previously (and stupidly) assumed parameter originally estimated for this model.
 ~ Pbd = 0.096
 Pbd = 0.0192
@@ -255,22 +255,33 @@ state = c("FL")
 ~ state = c("FL","SC")
 ~ shape__FL = 0.7515
 ~ rate__FL = 0.3550
-B1__FL = c(0.9, 0.2)
-~ B1__FL = c(0.9, 0.4, 0.2)
+~ B1__FL = c(0.9, 0.2)
+B1__FL = c(0.9, 0.4, 0.2)
 
 ~ shape__SC = 0.5657
 ~ rate__SC = 1.9082
 B1__SC = c(0.004)
-B1__SC = c(0.009, 0.002)
-~ B1__SC = c(0.009, 0.004, 0.002)
+~ B1__SC = c(0.009, 0.002)
+B1__SC = c(0.009, 0.004, 0.002)
 
 ~ B2_B1_factor = 0.5
 density = c(1.5)
-density = c(1.5, 5)
-~ density = c(1.5, 3, 5)
+~ density = c(1.5, 5)
+density = c(1.5, 3, 5)
 ss = c(2)
-ss = c(2, 6)
-~ ss = c(2, 4, 6)
+~ ss = c(2, 6)
+ss = c(2, 4, 6)
+
+
+* Strain variants (from table 2 of preprint on viral parameters)
+~ variant = c("Pol", "DR")
+~ infpd__Pol = 4
+~ incub__Pol = 10
+~ Pir__Pol = 0.1
+~ infpd__DR = 12
+~ incub__DR = 11
+~ Pir__DR = 0.4
+
 
 
 

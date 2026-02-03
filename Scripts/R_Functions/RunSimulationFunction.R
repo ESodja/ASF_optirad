@@ -23,6 +23,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     # Filter variables (parameters with >1 value) out of parameters
     ## selecting variables is done in SetVarParms.R
     parameters <- parameters[names(parameters) %in% names(variables) == FALSE]
+    parameters <- parameters[-grep('.\\_\\_.', names(parameters))]
 
     #Pull needed parms from parameters for all reps
     list2env(parameters, .GlobalEnv)
@@ -41,6 +42,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         #calc vals based on variables
         N0 <- dens*area
         K <- N0*1.5
+        parameters <- c(parameters, vars)
 
         #loop through landscapes
         centroids <- land_grid_list[[l.val]]$centroids

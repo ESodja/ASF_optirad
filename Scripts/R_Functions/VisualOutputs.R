@@ -55,16 +55,16 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     rows.plt <- round(sqrt(length(unique(tm.pop.unq[,var]))))
     cols.plt <- ceiling(sqrt(length(unique(tm.pop.unq[,var]))))
     for (l in unique(tm.pop.unq[,land])){
-        png(paste0('./test_outputs/tm.plots_land_',l,'.png'), width=450*cols.plt, height=500*rows.plt)
+        png(paste0('./test_outputs/tm.plots_land_', l, '.png'), width=450*cols.plt, height=500*rows.plt)
         ## make plot dimensions dynamics based on parameter inputs
         pdef <- par(mfrow=c(rows.plt, cols.plt),
-                oma=c(8,1.2,0.2,0.2),
+                oma=c(8, 1.2, 0.2, 0.2),
                 lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfrow=c(1,1), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfcol=c(length(unique(tm.mat[,var])), length(unique(tm.mat[,land]))))
         # set plot ranges based on maximum of everything that will be on the multiplot figure
         xrng = range(tm.mat[,timestep])
-        yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
+        yrng = log1p(range(tm.mat[,.(BB, S, E, I, R, C, Z)]))
         # loop over the parameter combinations for each plot panel
         seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = variables){
             vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion
@@ -224,7 +224,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     radius = parameters['Rad']
 #     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
-    if (radius != 0 & detectday < thyme){
+#     if (radius != 0 & detectday < thyme){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
         unq.detections <- unique(detections[,.(var,land,rep,time,loc,max.time,detected)])
@@ -260,7 +260,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
             png(paste0('./test_outputs/sptmplot_vars_', i,'_land_', j, '_rep_', k,'.png'), width=2000, height=2000)
             par(mfrow = c(paneldim, paneldim), oma=c(0,0,0,0), mar=c(0,0,0,0))
             lapply(seq(max(sub.incidence[,timestep])), function(x){
-                plot(ctY ~ ctX, data=sub.solocs[time == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100))
+                plot(y ~ x, data=sub.solocs[time == x,], pch='.', col='gray', xlim=c(0,100), ylim=c(0,100))
                 if(nrow(allzones) > 0){points(ctY ~ ctX, data=sub.zones[timestep <= x,], pch='.', col='yellow')}#, cex=1.2, xlim=c(0,100), ylim=c(0,100))
     #                 points(y ~ x, data=sub.solocs[timestep == x,], pch=1, col='gray')
     #                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
@@ -272,7 +272,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
             library(animation)
             plot.step <- function(x){
                 panels <- layout(matrix(c(1, 1, 1, 2, 3, 4), nrow=3, ncol=2), widths=c(3, 1), heights=c(1, 1, 1), respect=FALSE)
-                plot(ctY ~ ctX, data=sub.solocs[time == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[time==x, nlive]))
+                plot(y ~ x, data=sub.solocs[time == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[time==x, nlive]))
                 if(nrow(allzones) > 0) points(ctY ~ ctX, data=sub.zones[time <= x,], pch=3, col='yellow')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
                 if (x > detectday & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
@@ -294,12 +294,12 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
         # moves gifs to the proper folder
         lapply(list.files(pattern='*.gif'), function(x) file.rename(x, paste0('./test_outputs/',x)))
-    }
+#     }
 
 
     ## wavespeed stuff
-#     png('./test_outputs/wavespeed.png', width=1200, height=1400)
     browser()
+    png('./test_outputs/wavespeed.png', width=1200, height=1400)
     par.og <- par(mfrow=c(2,3), oma=c(8,1.2,0.2,0.2), mar=c(4,4,1,1))
     edge.interactions <- unique(wv.speed[x==0.25 | y==0.25 | x==99.75 | y==99.75, .(v,l,r,time)])
     wv.speed <- edge.interactions[,edge := 1][wv.speed, on=.NATURAL]
@@ -327,7 +327,6 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     matplot(log1p(inf.indiv[,2:ncol(inf.indiv)]), type='b', lty=1, col=rep(1:nrow(variables), each=length(land_grid_list)), pch=seq(length(land_grid_list)),
             ylab='log(1+tot. infected individuals E+I+C)', xlab='week', main='Infected individuals over time')
 
-
     par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), mar=c(0, 0, 0, 0), new=TRUE)
     plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
     legend("bottom", legend=c('vars:', 1:nrow(variables), 'land:', seq(length(land_grid_list))),
@@ -336,12 +335,11 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
            pch=c(rep(NA, 2+nrow(variables)), seq(length(land_grid_list))),
            horiz=TRUE, bty='n', cex=1.3, lwd=2)
 
-#     dev.off()
+    dev.off()
 
     par(par.og)
 
     ## Plot movement and density input parameters, with z response of spatial spread rate and maximum incidence
-    browser()
     # get names of variables that are not connected to state (leaves state, density, B1, and any other user-defined variables)
     wild.vars <- names(variables)[names(variables) %in% c('ss','B2','shape','rate','F1','F2_int','F2_B','F2i_int','F2i_B') == FALSE]
     # grab unique combinations of the remaining variables
@@ -364,11 +362,13 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     var.spd.inc <- vl.spd.inc[variables[,v:=seq(nrow(variables))], on=.NATURAL]
 
+    png('./test_outputs/inc_spread.png', width=1200, height=1200)
     par(mfrow=c(2,2))
     plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='FL max incidence')
     plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='SC max incidence')
     plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='FL avg spread rate')
     plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='SC avg spread rate')
+    dev.off()
 
 
 }
