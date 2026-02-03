@@ -1,6 +1,6 @@
 FastMovement <- function(pop, centroids, shape, rate, inc, mv_pref, RSF_mat=NULL, RSF_mat0=NULL){
 
-    cells <- nrow(centroids)
+    ncells <- nrow(centroids)
     #run checks to make sure objects input correctly
     if(mv_pref != 3){
         if(!missing(RSF_mat0) | !missing(RSF_mat)){
@@ -12,20 +12,21 @@ FastMovement <- function(pop, centroids, shape, rate, inc, mv_pref, RSF_mat=NULL
 
     #get distances from gamma distribution
     pop[,4] <- rgamma(nrow(pop), shape=shape, rate=rate)
+
     # if nobody is alive, movement distance should be 0 (generates error if not)
     pop[,4][pop[,1]==0] <- 0
 
-    #set those less than inc to 0
+    # set those less than inc to 0
     pop[,4][pop[,4] < inc] <- 0
 
-    #set present locations to previous locations
+    # set previous locations to present locations
     pop[,7] <- pop[,3]
 
     #convert abundance/locs vector into long format
-    abund.mat <- matrix(0, nrow=cells, ncol=1)
+    abund.mat <- matrix(0, nrow=ncells, ncol=1)
     abund.df <- data.frame("abund" = pop[, 1], "cell" = pop[, 3])
     abund.df <- abund.df %>% dplyr::group_by(cell) %>% dplyr::summarize("abund"=sum(abund)) %>% as.data.frame()
-    cells <- data.frame("cell" = 1:cells)
+    cells <- data.frame("cell" = 1:ncells)
     abund.df <- left_join(cells, abund.df, by="cell")
     abund.df$abund[is.na(abund.df$abund)] <- 0
     abund.mat[,1] <- abund.df$abund

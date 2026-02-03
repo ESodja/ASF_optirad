@@ -13,7 +13,7 @@ SimulateOneRun <- function(outputs, pop, centroids, grid, parameters, cpp_functi
 ######## Initialize Output Objects ########
     list2env(outputs, .GlobalEnv)
 
-#track first infection in Incidence matrix
+# track first infection in Incidence matrix
     Incidence[1] <- num_inf_0
 
 ######## Start simulation ########

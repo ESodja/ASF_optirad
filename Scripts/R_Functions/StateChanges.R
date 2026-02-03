@@ -44,6 +44,7 @@ StateChanges <- function(pop, centroids, cells, parameters, Incidence, BB, i){
     liverows <- which(pop[, 8, drop=FALSE] > 0 | pop[, 9, drop=FALSE] > 0 | pop[, 11, drop=FALSE] > 0) #rownums with live indiv
 
     # density-dependent birth rate
+    ## this will need adjustment for culling so unculled areas don't get a growth boost artificially
     Brate <- Pbd * rowSums(pop[, c(8, 9, 11)]) * (1 - sum(pop[, c(8, 9, 11)]) / K)
     Sdpb <- pmin(10 * rowSums(pop[, c(8, 9, 11)]), rnbinom(nrow(pop), mu = Brate, size = 0.01))
 
@@ -55,11 +56,11 @@ StateChanges <- function(pop, centroids, cells, parameters, Incidence, BB, i){
     Pse <- FOI_R(pop, centroids, cells, B1, B2, F1, F2_int, F2_B, F2i_int, F2i_B) #cpp parallel version, 22x faster than R version
     Pse[Pse < 0] <- 0
 
-    # Exposed to infected
-    Pei <- 1 - exp(-1 / (rpois(nrow(pop), 4) / 7))
+    # Exposed to infected -- based on the incubation period
+    Pei <- 1 - exp(-1 / (rpois(nrow(pop), incub) / 7))
 
     # Infected to contageous corpse or recovered, depending on Pir (recovery rate)
-    Pic <- 1 - exp(-1 / (rpois(nrow(pop), 5) / 7))
+    Pic <- 1 - exp(-1 / (rpois(nrow(pop), infpd) / 7))
 
     ######## Conduct the State Transitions ########
     # susceptible state changes

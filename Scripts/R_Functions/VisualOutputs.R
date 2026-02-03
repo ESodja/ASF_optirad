@@ -55,16 +55,16 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     rows.plt <- round(sqrt(length(unique(tm.pop.unq[,var]))))
     cols.plt <- ceiling(sqrt(length(unique(tm.pop.unq[,var]))))
     for (l in unique(tm.pop.unq[,land])){
-        png(paste0('./test_outputs/tm.plots_land_',l,'.png'), width=450*cols.plt, height=500*rows.plt)
+        png(paste0('./test_outputs/tm.plots_land_', l, '.png'), width=450*cols.plt, height=500*rows.plt)
         ## make plot dimensions dynamics based on parameter inputs
         pdef <- par(mfrow=c(rows.plt, cols.plt),
-                oma=c(8,1.2,0.2,0.2),
+                oma=c(8, 1.2, 0.2, 0.2),
                 lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfrow=c(1,1), oma=c(8,0.2,0.2,0.2),lwd=2.3, cex.lab=1.8, cex.axis=1.6, cex.main=2, cex.sub=1.4)
         # par(mfcol=c(length(unique(tm.mat[,var])), length(unique(tm.mat[,land]))))
         # set plot ranges based on maximum of everything that will be on the multiplot figure
         xrng = range(tm.mat[,timestep])
-        yrng = log1p(range(tm.mat[,.(BB,S,E,I,R,C,Z)]))
+        yrng = log1p(range(tm.mat[,.(BB, S, E, I, R, C, Z)]))
         # loop over the parameter combinations for each plot panel
         seirczbb.temporal <- function(v, l, plt.i, rows.plt, cols.plt, dat=tm.mat, vlist = variables){
             vardat <- paste(vlist[v,], collapse=' ') # quick and dirty parameter inclusion

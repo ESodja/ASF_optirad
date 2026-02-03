@@ -15,15 +15,16 @@ SetVarParms <- function(parameters){
                                     ss = rep(parameters$ss, length(parameters$state)))
 
     B1 <- unlist(lapply(parameters$state, function(x){parameters[paste0('B1__',x)]}))
-    rename.to.state <- function(vars){
+    rename.to.state <- function(vars, in.name='state'){
         # pulls out state names from parameter values separated by __ and sticks them in a table
         varname <- deparse(substitute(vars))
         names(vars) <- unlist(lapply(strsplit(names(vars), '__'), function(x) x[[2]]))
         names(vars) <- unlist(lapply(strsplit(names(vars), '\\d'), function(x) x[[1]]))
         tab <- data.frame(names(vars), vars)
-        names(tab) <- c('state', varname)
+        names(tab) <- c(in.name, varname)
         return(tab)
     }
+
     B1_tab <- as.data.table(rename.to.state(B1))
     B1_tab[, density := rep(parameters$density, length.out = nrow(B1_tab))]
     canonical.params <- merge(canonical.params, B1_tab, on=state)
@@ -40,6 +41,8 @@ SetVarParms <- function(parameters){
     F2_B <- unlist(parameters[grep('^F2_B', names(parameters))])
     F2i_int <- unlist(parameters[grep('^F2i_int', names(parameters))])
     F2i_B <- unlist(parameters[grep('^F2i_B', names(parameters))])
+    infpd <- unlist(parameters[grep('^infpd', names(parameters))])
+    incub <- unlist(parameters[grep('^incub', names(parameters))])
 
     shapes <- rename.to.state(shape)
     rates <- rename.to.state(rate)
@@ -48,11 +51,15 @@ SetVarParms <- function(parameters){
     F2_Bs <- rename.to.state(F2_B)
     F2i_ints <- rename.to.state(F2i_int)
     F2i_Bs <- rename.to.state(F2i_B)
+    infpds <- rename.to.state(infpd, 'variant')
+    incubs <- rename.to.state(incub, 'variant')
 
     # connect all the tables together on their "state" column -- https://stackoverflow.com/a/34393416
     shaperate_table <- Reduce(function(x1, x2) merge(x1, x2, by='state'), list(shapes, rates, F1s, F2_ints, F2_Bs, F2i_ints, F2i_Bs))
+    variant_table <- Reduce(function(x1, x2) merge(x1, x2, by='variant'), list(infpds, incubs))
 
     result <- inner_join(result, shaperate_table, by='state')
+    result <- inner_join(result, variant_table, by='variant')
 
     return(result)
 }
