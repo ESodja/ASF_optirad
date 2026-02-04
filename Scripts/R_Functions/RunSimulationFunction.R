@@ -43,6 +43,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         N0 <- dens*area
         K <- N0*1.5
         parameters <- c(parameters, vars)
+        parameters$K <- K
 
         #loop through landscapes
         centroids <- land_grid_list[[l.val]]$centroids

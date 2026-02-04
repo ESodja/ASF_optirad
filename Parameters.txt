@@ -23,7 +23,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * nrep, number of replicates
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
-~ nrep = 2
+~ nrep = 5
 ~ thyme = 78
 
 ############################

@@ -4,7 +4,7 @@ wave_speed <- function(solocs.all){
     # columns are v, l, r, time, x, y, "unknown" (cell quality), S, E, I, R, C, Z
 
     # get introduction point
-    setnames(solocs.all, c('ctX', 'ctY'), c('x', 'y'))
+#     setnames(solocs.all, c('ctX', 'ctY'), c('x', 'y'))
     setorder(solocs.all, v, l, r, time, x, y)
     init.pts <- solocs.all[E > 0 | I > 0 | C > 0, .SD[1], by=.(v, l, r)]
     setnames(init.pts, c('x', 'y'), c('xi', 'yi'))

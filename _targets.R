@@ -48,9 +48,10 @@ tar_option_set(packages = c("Rcpp",
                             "clustermq",
                             "deSolve",
                             "colorspace",
-                            "data.table"),
-               seed = 12345, ## can set the seed for reproducibility, or NA for non-reproducible totally stochastic -- see targets manual section 9.2
-                error = 'stop') # for troubleshooting
+                            "data.table")#,
+#                seed = 12345, ## can set the seed for reproducibility, or NA for non-reproducible totally stochastic -- see targets manual section 9.2
+#                 error = 'stop') # for troubleshooting
+)
 
 # Pipeline ---------------------------------------------------------
 
