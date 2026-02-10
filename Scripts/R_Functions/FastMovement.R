@@ -33,11 +33,11 @@ FastMovement <- function(pop, centroids, shape, rate, inc, mv_pref, RSF_mat=NULL
 
     #different functions for each movement pref version, temporary workaround.
     #mv_pref=3 in separate function because not sure how to use Nullify class input to rcpp parallel for optional args.
-    if(mv_pref!=3){
-        m1 <- parallelMovementRcpp_portion(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, mv_pref)
-    } else if (mv_pref == 3){
-        m1 <- parallelMovement_RSFavail(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, RSF_mat0, RSF_mat, mv_pref)
-    }
+#     if(mv_pref!=3){
+    m1 <- parallelMovementRcpp_portion(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, mv_pref)
+#     } else if (mv_pref == 3){
+#         m1 <- parallelMovement_RSFavail(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, RSF_mat0, RSF_mat, mv_pref)
+#     }
 
     pop[,3] <- m1
 

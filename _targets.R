@@ -65,6 +65,9 @@ list(
     ### Input landscapes directory: -----------
     tar_target(lands_path, file.path("Input","lands"), format="file"),
 
+    ## Get names of land tiles in order so we can associate lands with their data previously calculated
+    tar_target(lands_names, data.table(land = seq(1, length(list.files(lands_path))), file = list.files(lands_path))),
+
     ## Read and format input data -----
     tar_terra_sprc(plands_sprc, ReadLands(lands_path)),
 
@@ -142,9 +145,9 @@ list(
       ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters0), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)}#, tar_read(burn.list)) }
 
 
-    tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters))
+    tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters, lands_names))
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ; VisualOutputs(tar_read(out.list), tar_read(variables), tar_read(land_grid_list), tar_read(parameters), tar_read(lands_names)) }
 
 
 ) # end targets list

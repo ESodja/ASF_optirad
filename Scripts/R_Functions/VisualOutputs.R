@@ -1,5 +1,8 @@
 
-VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
+VisualOutputs <- function(out.list, variables, land_grid_list, parameters, lands_names){
+    ## NEED TO:
+    ## -- add land image to background of gifs?
+    ## -- get ldsel table from NND calc for attributes of landscapes
 
     # Generates output plots for examples
     library(data.table)
@@ -221,7 +224,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     radius = parameters['Rad']
 #     unq.combos <- unique(unq.eic[max.time > 10,.(var, land, rep)])
-    if (radius != 0 & detectday < thyme){
+    if (radius != 0 & parameters[['detectday']] < parameters[['thyme']]){
         ## plotting incidence with zone of control over time for a bunch of plots
         # detection locations
         unq.detections <- unique(detections[,.(var,land,rep,time,loc,max.time,detected)])
@@ -245,7 +248,8 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
         unq.incidence[,loc.min := NULL]
         unq.incidence[,loc.max := NULL]
         setorder(unq.incidence, var, land, rep, timestep, loc)
-        unq.combos <- unique(unq.incidence[,sum(is.inf), by=.(var, land, rep, timestep)][V1>1,.(var,land,rep)])
+        ## gets all runs than last at least 50 weeks, infects at least 5 cells during the course of the run, and then takes the first and last rep of each var/land combo to use for gif example
+        unq.combos <- unique(unq.incidence[max.time > 50,sum(is.inf), by=.(var, land, rep, timestep)][,max(V1), by=.(var, land, rep)][V1 > 5, .(var,land,rep)])[, .SD[.N], by=.(var, land)]
 
     #         unq.combos <- unq.combos[var == 7 & rep == 2,]
         mapply(function(i, j, k){
@@ -262,17 +266,17 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     #                 points(y ~ x, data=sub.solocs[timestep == x,], pch=1, col='gray')
     #                 points(ctY ~ ctX, data=sub.incidence[timestep <= x & is.inf == 0,], pch='.', col='red')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
-                if (x > detectday & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
+                if (x > parameters['detectday'] & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
             })
             dev.off()
 
             library(animation)
             plot.step <- function(x){
                 panels <- layout(matrix(c(1, 1, 1, 2, 3, 4), nrow=3, ncol=2), widths=c(3, 1), heights=c(1, 1, 1), respect=FALSE)
-                plot(y ~ x, data=sub.solocs[time == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(sub.solocs[time==x, nlive]))
+                plot(y ~ x, data=sub.solocs[time == x,], pch='.', col='gray', xlim = c(0, 100), ylim = c(0, 100), main=paste('week', x), cex=log1p(nlive))
                 if(nrow(allzones) > 0) points(ctY ~ ctX, data=sub.zones[time <= x,], pch=3, col='yellow')
                 points(ctY ~ ctX, data=sub.incidence[timestep == x & is.inf == 1,], pch=3, col='red')
-                if (x > detectday & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
+                if (x > parameters['detectday'] & exists('sub.detections')) points(ctY ~ ctX, data=sub.detections[time <= x,], pch=2, col='blue')
                 plot(allnlive ~ time, data=sub.solocs[, allnlive := sum(nlive), by=time][order(time)], main='Live pigs', type='l')
                 points(allnlive ~ time, data=sub.solocs[time==x,], pch=1, cex=2)
                 plot(allnlive ~ timestep, data=unique(sub.incidence[, allnlive := sum(is.inf), by=timestep][,.(timestep, allnlive)])[order(timestep)], main='Infected cells', type='l', col='red')
@@ -302,7 +306,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 #     incidence <- incidence[is.na(edge),]#[,edge:=NULL]
 #     inc.time <- dcast(incidence[,.N, by=.(var, land, rep, state, timestep)], timestep ~ var + land + state, value.var = 'N', fun.aggregate = mean, na.rm=TRUE, fill=NA)
 #     # incidence by addition/subtraction by timestep (i.e. rate of change by week)
-#     inc.time.rate <- inc.time[,lapply(.SD, function(x) x - shift(x, 1)), .SDcols=2:ncol(inc.time)]
+#     inc.time.rate <- inc.time[,lapply(.SD, function(x) x - data.table::shift(x, 1)), .SDcols=2:ncol(inc.time)]
 #
 #     combonames <- unlist(lapply(strsplit(names(inc.time.rate), '_[a-z]'), function(x) x[[1]]))
 #     name.index <- seq(3)
@@ -355,11 +359,11 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 #     , l=unique(incidence[,.(var, land)])[,land])
 #     dev.off()
 
-    ## maximum incidence rate (barplots)
+    ## maximum incidence rate (boxplots)
 
 
 #     tm.mat[,EI := E+I]
-#     tm.mat[,dEI := EI-shift(EI,1), by=.(var,land,rep)]
+#     tm.mat[,dEI := EI-data.table::shift(EI,1), by=.(var,land,rep)]
 #     tm.mat[is.na(dEI) & timestep==1,dEI := 0]
 #     tm.mat[,incidenceEI := dEI/S]
 #     max.inc <- tm.mat[,max(incidenceEI), by=.(var,land,rep)]
@@ -368,17 +372,18 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
     edge.interactions <- unique(wv.speed[x==0.25 | y==0.25 | x==99.75 | y==99.75, .(v,l,r,time)])[,edge := 0]
     tm.mat.edge <- edge.interactions[tm.mat, on=.(v=var, l=land, r=rep, time=timestep)]
     setnames(tm.mat.edge, c('v','l','r','time'), c('var','land','rep','timestep'))
+    tm.mat.edge[is.na(edge), seq.test := 1:.N, by=.(var,land,rep)]
+    tm.mat.edge <- tm.mat.edge[timestep == seq.test,][,seq.test := NULL]
 
 #     tm.mat.edge[,EIC := E+I+C]
-#     tm.mat.edge[,dEIC := EIC-shift(EIC,1), by=.(var,land,rep)]
+#     tm.mat.edge[,dEIC := EIC-data.table::shift(EIC,1), by=.(var,land,rep)]
 #     tm.mat.edge[is.na(dEIC) & timestep==1,dEIC := 0]
 #     tm.mat.edge[,incidence := dEIC/S]
 #     max.inc <- tm.mat.edge[,max(incidence), by=.(var,land,rep)]
 #     matplot((dcast(tm.mat.edge, timestep ~ var + land + rep, value.var = 'incidence', fun.aggregate=mean, na.rm=TRUE, fill=NA)[,-c(1)]), type='l', lty=1)
 
-    tm.mat.edge <- tm.mat.edge[is.na(edge),]
     tm.mat.edge[,EI := E+I]
-    tm.mat.edge[,dEI := EI-shift(EI,1), by=.(var,land,rep)]
+    tm.mat.edge[,dEI := EI-data.table::shift(EI,1), by=.(var,land,rep)]
     tm.mat.edge[is.na(dEI) & timestep==1,dEI := 0]
     tm.mat.edge[,incidenceEI := dEI/S]
 #     matplot((dcast(tm.mat.edge, timestep ~ var + land + rep, value.var = 'incidenceEI', fun.aggregate=mean, na.rm=TRUE, fill=NA)[,-c(1)]), type='l', lty=1, main="Incidence", ylab="(E+I_t - E+I_t-1)/S_t", xlab='Week')
@@ -436,39 +441,90 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters){
 
     dev.off()
 
-#     browser()
     par(par.og)
 
-    ## Plot movement and density input parameters, with z response of spatial spread rate and maximum incidence
-    # get names of variables that are not connected to state (leaves state, density, B1, and any other user-defined variables)
-    wild.vars <- names(variables)[names(variables) %in% c('ss','B2','shape','rate','F1','F2_int','F2_B','F2i_int','F2i_B') == FALSE]
-    # grab unique combinations of the remaining variables
-    mvden.var <- unique(variables[,..wild.vars])
+#     ## Plot movement and density input parameters, with z response of spatial spread rate and maximum incidence
+#     # get names of variables that are not connected to state (leaves state, density, B1, and any other user-defined variables)
+#     wild.vars <- names(variables)[names(variables) %in% c('ss','B2','shape','rate','F1','F2_int','F2_B','F2i_int','F2i_B') == FALSE]
+#     # grab unique combinations of the remaining variables
+#     mvden.var <- unique(variables[,..wild.vars])
+#
+#     # connect to spatial spread rate
+#     vl.avg.spd <- apply(spd.wave[,2:ncol(spd.wave)], 2, mean, na.rm=TRUE)
+#     vl.avg.spd2 <- data.table(names(vl.avg.spd), vl.avg.spd)
+#     vl.avg.spd2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
+#     vl.avg.spd2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+#
+#     # connect to maximum incidence
+#     inf.indiv2 <- dcast(inf.indiv1, time ~ v+l, value.var='tot.inf.indiv', fun.aggregate=max, fill=NA)
+#     vl.max.inc <- apply(inf.indiv2[,2:ncol(inf.indiv2)], 2, max, na.rm=TRUE)
+#     vl.max.inc2 <- data.table(names(vl.max.inc), vl.max.inc)
+#     vl.max.inc2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
+#     vl.max.inc2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+#
+#     vl.spd.inc <- vl.max.inc2[vl.avg.spd2, on=.NATURAL][,.(v, l, vl.max.inc, vl.avg.spd)]
+#
+#     var.spd.inc <- vl.spd.inc[variables[,v:=seq(nrow(variables))], on=.NATURAL]
+#
+#     png('./test_outputs/inc_spread.png', width=1200, height=1200)
+#     par(mfrow=c(2,2))
+#     plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='FL max incidence')
+#     plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='SC max incidence')
+#     plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='FL avg spread rate')
+#     plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='SC avg spread rate')
+#     dev.off()
 
-    # connect to spatial spread rate
-    vl.avg.spd <- apply(spd.wave[,2:ncol(spd.wave)], 2, mean, na.rm=TRUE)
-    vl.avg.spd2 <- data.table(names(vl.avg.spd), vl.avg.spd)
-    vl.avg.spd2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
-    vl.avg.spd2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+    ## Proportion of simulations that ASF establishes
 
-    # connect to maximum incidence
-    inf.indiv2 <- dcast(inf.indiv1, time ~ v+l, value.var='tot.inf.indiv', fun.aggregate=max, fill=NA)
-    vl.max.inc <- apply(inf.indiv2[,2:ncol(inf.indiv2)], 2, max, na.rm=TRUE)
-    vl.max.inc2 <- data.table(names(vl.max.inc), vl.max.inc)
-    vl.max.inc2[,v := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[1]])))]
-    vl.max.inc2[,l := as.numeric(unlist(lapply(strsplit(V1, '_'), function(x) x[[2]])))]
+    ldsel.nnd <- readRDS('./Landscape_Setup/NND_Lands/4_Output/ldsel.rds')
+    setDT(ldsel.nnd)
+    setnames(ldsel.nnd, 'index', 'tileno')
+    lands_names[,plandno := as.numeric(unlist(tstrsplit(unlist(tstrsplit(file, '_', keep=2)), fixed=TRUE, '.', keep=1)))]
+    ldsel.nnd <- ldsel.nnd[lands_names, on=.(tileno=plandno)]
+    browser()
+    ## need to make sure these connect up correctly, since lands are counted 1:n and not connected to tile name
 
-    vl.spd.inc <- vl.max.inc2[vl.avg.spd2, on=.NATURAL][,.(v, l, vl.max.inc, vl.avg.spd)]
+    # takes anything that lasts more than 20 weeks
+    established <-  unique(tm.mat[, max(timestep), by=.(var, land, rep)][,est := 0][V1 > 20, est := 1][,est.no := sum(est, na.rm=TRUE), by=.(var, land)][,est.pct := est.no/.N, by=.(var, land)][,.(var, land, est.no, est.pct)])
+    established <- established[variables[,.(state, variant, density, id)], on=.(var=id)]
+    est.lands <- established[ldsel.nnd, on=.(land=land), nomatch=NULL]
 
-    var.spd.inc <- vl.spd.inc[variables[,v:=seq(nrow(variables))], on=.NATURAL]
 
-    png('./test_outputs/inc_spread.png', width=1200, height=1200)
-    par(mfrow=c(2,2))
-    plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='FL max incidence')
-    plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.max.inc/max(vl.max.inc), 0, 0), pch=15, cex=10, main='SC max incidence')
-    plot(B1 ~ density, data=var.spd.inc[state=='FL'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='FL avg spread rate')
-    plot(B1 ~ density, data=var.spd.inc[state=='SC'], col=rgb(vl.avg.spd/max(vl.avg.spd), 0, 0), pch=15, cex=10, main='SC avg spread rate')
+#     established[, cat.name := paste(land, state, variant, density, sep='_')]
+#     est.wide.pct <- dcast(established, var ~ land, value.var='est.pct')
+#     est.wide.no <- dcast(established, var ~ land, value.var='est.no')
+    png('./test_outputs/PCt_estab.png', width=1000, height=800)
+    barplot(est.pct ~ as.factor(land) + as.factor(var), data=established, beside=TRUE, legend=TRUE, names=established[,paste(state, variant, density, sep='_')], ylim=c(0,1), main='% Establishment by land', xlab="State (movement)_Strain_Density", ylab='% persisting > 20 weeks')
+    dev.off()
+    ## will want to have this as heatmap for landscape attributes for each of the 8 variable combinations
+
+    unq.parms <- unique(est.lands[,.(var, state, variant, density)])
+
+    png('./test_outputs/land_parcombos.png', width=1000, height=800)
+    par(mfrow=c(length(unique(unq.parms[,density])), nrow(unq.parms)/length(unique(unq.parms[,density]))))
+    lapply(seq(nrow(unq.parms)), function(y){
+        sub.parms <- unq.parms[y,]
+        plot(nnd_med ~ disp, data=est.lands[var == sub.parms[,var] & state == sub.parms[,state] & variant == sub.parms[,variant] & density == sub.parms[,density]],
+             pch=15, col=rgb(est.pct,0,0), cex=4, main=paste(unlist(sub.parms), collapse='_'))
+    })
     dev.off()
 
 
+    ## landscape attributes
+    # land_grid_list
+    # 1: number of cells
+    # 2: table:
+    #     1: cell id
+    #     2: dim edge low
+    #     3: dim edge high
+    #     4: dim edge low
+    #     5: dim edge high
+    #     6: center point x?
+    #     7: center point y?
+    #     8: cell preference value
+#     lapply(seq(length(land_grid_list)), function(x){
+#         in.rast <- rast(land_grid_list[[x]][[3]], type='xyz')
+#         corr <- autocor(in.rast, global=TRUE)
+#         return(corr)
+#     })
 }
