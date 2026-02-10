@@ -23,7 +23,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * nrep, number of replicates
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
-~ nrep = 2
+~ nrep = 10
 ~ thyme = 78
 
 ############################
@@ -169,7 +169,7 @@ detectday = 20
 * Intensity = 0.05, proportion of population targeted for removal per day based on capabilities
 
 ~ alphaC = 1.1
-~ Rad = 5
+~ Rad = 0
 Rad = c(10,20)
 ~ cullstyle = "startIN"
 cullstyle = "startOUT"
