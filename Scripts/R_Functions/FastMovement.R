@@ -31,13 +31,8 @@ FastMovement <- function(pop, centroids, shape, rate, inc, mv_pref, RSF_mat=NULL
     abund.df$abund[is.na(abund.df$abund)] <- 0
     abund.mat[,1] <- abund.df$abund
 
-    #different functions for each movement pref version, temporary workaround.
-    #mv_pref=3 in separate function because not sure how to use Nullify class input to rcpp parallel for optional args.
-#     if(mv_pref!=3){
+    # movement in C++ script for faster execution
     m1 <- parallelMovementRcpp_portion(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, mv_pref)
-#     } else if (mv_pref == 3){
-#         m1 <- parallelMovement_RSFavail(pop, abund.mat[, 1, drop=FALSE], pop[, 3, drop=FALSE], centroids, RSF_mat0, RSF_mat, mv_pref)
-#     }
 
     pop[,3] <- m1
 
@@ -53,9 +48,12 @@ FastMovement <- function(pop, centroids, shape, rate, inc, mv_pref, RSF_mat=NULL
 
     #if stop function here..
     #if all sounders with dist equals zero NOT contained in rows for which prev locs=present locs
-    if(all(!(which(pop[,4] == 0) %in% which(pop[,3] == pop[,7])))){
-        stop("All sounders with distance=0 should have same prev. and present locations")
-    }
+#     print(nrow(pop[pop[,4]==0,]))
+#     print(all(!(which(pop[,4] == 0) %in% which(pop[,3] == pop[,7]))))
+#     if(is.null(nrow(pop[pop[,4]==0,])) | (nrow(pop[pop[,4] == 0,]) > 0 & all(!(which(pop[,4] == 0) %in% which(pop[,3] == pop[,7]))))){
+#         browser()
+#         stop("All sounders with distance=0 should have same prev. and present locations")
+#     }
 
     return(pop)
 }

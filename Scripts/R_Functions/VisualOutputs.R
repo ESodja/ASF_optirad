@@ -390,7 +390,7 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters, lands
 
     max.inc <- tm.mat.edge[,max(incidenceEI), by=.(var,land,rep)]
     max.inc <- max.inc[variables[,id := 1:.N], on=.(var=id)]
-    boxplot(V1 ~ state + variant + as.factor(land) + as.factor(density), data=max.inc, ylab='maximum incidence')
+    boxplot(V1 ~ contact + variant + as.factor(land) + as.factor(density), data=max.inc, ylab='maximum incidence')
 
     ## wavespeed stuff
     ## 4 plots for temporal dynamics -- incidence/time, max distance/time, peak speed, area/time
@@ -481,12 +481,11 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters, lands
     setnames(ldsel.nnd, 'index', 'tileno')
     lands_names[,plandno := as.numeric(unlist(tstrsplit(unlist(tstrsplit(file, '_', keep=2)), fixed=TRUE, '.', keep=1)))]
     ldsel.nnd <- ldsel.nnd[lands_names, on=.(tileno=plandno)]
-    browser()
-    ## need to make sure these connect up correctly, since lands are counted 1:n and not connected to tile name
 
     # takes anything that lasts more than 20 weeks
+    ## should be establishment criteria from madison's paper
     established <-  unique(tm.mat[, max(timestep), by=.(var, land, rep)][,est := 0][V1 > 20, est := 1][,est.no := sum(est, na.rm=TRUE), by=.(var, land)][,est.pct := est.no/.N, by=.(var, land)][,.(var, land, est.no, est.pct)])
-    established <- established[variables[,.(state, variant, density, id)], on=.(var=id)]
+    established <- established[variables[,.(contact, variant, density, id)], on=.(var=id)]
     est.lands <- established[ldsel.nnd, on=.(land=land), nomatch=NULL]
 
 
@@ -494,20 +493,21 @@ VisualOutputs <- function(out.list, variables, land_grid_list, parameters, lands
 #     est.wide.pct <- dcast(established, var ~ land, value.var='est.pct')
 #     est.wide.no <- dcast(established, var ~ land, value.var='est.no')
     png('./test_outputs/PCt_estab.png', width=1000, height=800)
-    barplot(est.pct ~ as.factor(land) + as.factor(var), data=established, beside=TRUE, legend=TRUE, names=established[,paste(state, variant, density, sep='_')], ylim=c(0,1), main='% Establishment by land', xlab="State (movement)_Strain_Density", ylab='% persisting > 20 weeks')
+    barplot(est.pct ~ as.factor(land) + as.factor(var), data=established, beside=TRUE, legend=TRUE, names=established[,paste(contact, variant, density, sep='_')], ylim=c(0,1), main='% Establishment by land', xlab="State (movement)_Strain_Density", ylab='% persisting > 20 weeks')
     dev.off()
     ## will want to have this as heatmap for landscape attributes for each of the 8 variable combinations
 
-    unq.parms <- unique(est.lands[,.(var, state, variant, density)])
+    unq.parms <- unique(est.lands[,.(var, contact, variant, density)])
 
-    png('./test_outputs/land_parcombos.png', width=1000, height=800)
+    browser()
+#     png('./test_outputs/land_parcombos.png', width=1000, height=800)
     par(mfrow=c(length(unique(unq.parms[,density])), nrow(unq.parms)/length(unique(unq.parms[,density]))))
     lapply(seq(nrow(unq.parms)), function(y){
         sub.parms <- unq.parms[y,]
-        plot(nnd_med ~ disp, data=est.lands[var == sub.parms[,var] & state == sub.parms[,state] & variant == sub.parms[,variant] & density == sub.parms[,density]],
+        plot(nnd_med ~ disp, data=est.lands[var == sub.parms[,var] & contact == sub.parms[,contact] & variant == sub.parms[,variant] & density == sub.parms[,density]],
              pch=15, col=rgb(est.pct,0,0), cex=4, main=paste(unlist(sub.parms), collapse='_'))
     })
-    dev.off()
+#     dev.off()
 
 
     ## landscape attributes

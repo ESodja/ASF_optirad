@@ -20,10 +20,10 @@ GetSurfaceParms<-function(parameters, land){
     } else {
         km_len <- parameters$inc * parameters$len
         area <- km_len^2
-        parameters=append(parameters,km_len)
-        names(parameters)[length(parameters)]<-"km_len"
-        parameters=append(parameters,area)
-        names(parameters)[length(parameters)]<-"area"
+        parameters <- append(parameters, km_len)
+        names(parameters)[length(parameters)] <- "km_len"
+        parameters <- append(parameters, area)
+        names(parameters)[length(parameters)] <- "area"
     }
 
 	return(parameters)

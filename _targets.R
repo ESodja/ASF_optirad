@@ -131,18 +131,22 @@ list(
     ### Get surface parameters: ---------------
     tar_target(parameters, GetSurfaceParms(parameters0, plands_sprc[1])),
 
+    ## Get landscape-specific movement parameters
+    tar_target(mv.params, if(parameters$grid.opts=='ras'){ readRDS('./Landscape_Setup/NND_Lands/4_Output/ldsel.rds') } else { return(NA)}),
+
     ## Run Model ---------------
     tar_target(out.list,
         RunSimulationReplicates(land_grid_list = land_grid_list,
                                 parameters = parameters,
                                 variables = variables,
                                 cpp_functions = list(Fast_FOI_Matrix_script, Movement_Fast_Generalized_script),
-                                reps = parameters$nrep
+                                reps = parameters$nrep,
+                                mv.parms = mv.params
         )
 #         , cue = tar_cue(seed = FALSE) # allows existing simulation outputs to stand despite having stochastic elements, so long as inputs are the same
     ),
       ## Copy paste everything in the {} including the {} to run simulations using targets outputs without running targets so you can read the error messages and outputs! :)
-      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters0), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep)}#, tar_read(burn.list)) }
+      ## {lapply(list.files('./Scripts/R_Functions/', full.names=TRUE), source) ;RunSimulationReplicates(tar_read(land_grid_list), tar_read(parameters0), tar_read(variables), list(tar_read(Fast_FOI_Matrix_script), tar_read(Movement_Fast_Generalized_script)), tar_read(parameters)$nrep, tar_read(mv.params))}#, tar_read(burn.list)) }
 
 
     tar_target(plot_outputs, VisualOutputs(out.list, variables, land_grid_list, parameters, lands_names))
