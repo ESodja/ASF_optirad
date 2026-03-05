@@ -17,5 +17,5 @@ tar_manifest()
 #Make pipeline
 # tar_make(callr_function = NULL, use_crew=FALSE, as_job=FALSE) # for troubleshooting
 tar_make()
-# tar_make_clustermq(workers = 6)
+tar_make_clustermq(workers = 6)
 

@@ -23,7 +23,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * nrep, number of replicates
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
-~ nrep = 10
+~ nrep = 25
 ~ thyme = 78
 
 ############################
@@ -67,24 +67,24 @@ rate = 0.3550
 Originally, these were all pulled into model with 'ModelStateSwitch.R' by reading in pairwise contact data from field studies
 
 ## Transmission rate within grid cells -- "omega_w" in 2022 paper
-~ F1__FL = 0.7380952
-~ F1__SC = 0.9375
+~ F1__Lo = 0.7380952
+~ F1__Hi = 0.9375
 
 ### Florida values
 ## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2_int__FL = -0.800939073371641
-~ F2_B__FL = -1.91283149755244
+~ F2_int__Lo = -0.800939073371641
+~ F2_B__Lo = -1.91283149755244
 ## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2i_int__FL = 2.32150593181132
-~ F2i_B__FL = -6.3722548347205
+~ F2i_int__Lo = 2.32150593181132
+~ F2i_B__Lo = -6.3722548347205
 
 ### S. Carolina values
 ## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2_int__SC = 0.64
-~ F2_B__SC = -1.16
+~ F2_int__Hi = 0.64
+~ F2_B__Hi = -1.16
 ## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2i_int__SC = 9.82
-~ F2i_B__SC = -4.11
+~ F2i_int__Hi = 9.82
+~ F2i_B__Hi = -4.11
 
 K = 1500
 ## carrying capacity; currently hard-coded in RunSimulationFunction.R
@@ -251,26 +251,18 @@ density, or ss because these are associated (thus they should be the same length
 B2_B1_factor is the conversion between B1 and B2 parameters, generally 0.5 (B2 = B1*0.5).
 
 
-state = c("FL")
-~ state = c("FL","SC")
-~ shape__FL = 0.7515
-~ rate__FL = 0.3550
-~ B1__FL = c(0.9, 0.2)
-B1__FL = c(0.9, 0.4, 0.2)
+~ contact = c("Hi","Lo")
+~ shape__Hi = 0.7515
+~ rate__Hi = 0.3550
+~ B1__Hi = c(0.9, 0.2)
 
-~ shape__SC = 0.5657
-~ rate__SC = 1.9082
-B1__SC = c(0.004)
-~ B1__SC = c(0.009, 0.002)
-B1__SC = c(0.009, 0.004, 0.002)
+~ shape__Lo = 0.5657
+~ rate__Lo = 1.9082
+~ B1__Lo = c(0.009, 0.002)
 
 ~ B2_B1_factor = 0.5
-density = c(1.5)
 ~ density = c(1.5, 5)
-density = c(1.5, 3, 5)
-ss = c(2)
 ~ ss = c(2, 6)
-ss = c(2, 4, 6)
 
 
 * Strain variants (from table 2 of preprint on viral parameters)

@@ -16,7 +16,7 @@
             #creates a neutral random landscape model with X lc variables
     #Value
       #a nested list of grid parameters
-RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps){
+RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_functions, reps, mv.parms){
 
     names(variables)[names(variables) == "density"] <- "dens"
 
@@ -29,7 +29,12 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     list2env(parameters, .GlobalEnv)
 
     # looping table for mapply
-    lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep = seq(reps))
+    lvtable <- expand.grid(vars = seq(nrow(variables)), land = 1:length(land_grid_list), rep = seq(reps))
+#     lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep = seq(reps))
+
+    # movement parameters from NND landscape selection
+    setDT(mv.parms)
+
 
     # loops over combinations of variables, lands, and reps
     rep.list <- mapply(function(v.val, l.val, r.val){
@@ -44,6 +49,10 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
         K <- N0*1.5
         parameters <- c(parameters, vars)
         parameters$K <- K
+
+        # movement parameters
+        parameters$shape <- as.numeric(mv.parms[l.val, gamma.shape])
+        parameters$rate <- as.numeric(mv.parms[l.val, gamma.rate])
 
         #loop through landscapes
         centroids <- land_grid_list[[l.val]]$centroids
