@@ -23,7 +23,7 @@ To temporarily remove a parameter, just remove the ~ and they will be ignored
 * nrep, number of replicates
 * thyme, total number of time steps. is spelled 'thyme' bc 'time' is a function in stats namespace 
 
-~ nrep = 5
+~ nrep = 25
 ~ thyme = 78
 
 ############################
@@ -67,24 +67,24 @@ rate = 0.3550
 Originally, these were all pulled into model with 'ModelStateSwitch.R' by reading in pairwise contact data from field studies
 
 ## Transmission rate within grid cells -- "omega_w" in 2022 paper
-~ F1__Hi = 0.7380952
-~ F1__Lo = 0.9375
+~ F1__Lo = 0.7380952
+~ F1__Hi = 0.9375
 
 ### Florida values
 ## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2_int__Hi = -0.800939073371641
-~ F2_B__Hi = -1.91283149755244
+~ F2_int__Lo = -0.800939073371641
+~ F2_B__Lo = -1.91283149755244
 ## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2i_int__Hi = 2.32150593181132
-~ F2i_B__Hi = -6.3722548347205
+~ F2i_int__Lo = 2.32150593181132
+~ F2i_B__Lo = -6.3722548347205
 
 ### S. Carolina values
 ## Direct contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2_int__Lo = 0.64
-~ F2_B__Lo = -1.16
+~ F2_int__Hi = 0.64
+~ F2_B__Hi = -1.16
 ## Indirect (carcass) contact rate among grid cells "f(omega_d)" -- alpha, beta
-~ F2i_int__Lo = 9.82
-~ F2i_B__Lo = -4.11
+~ F2i_int__Hi = 9.82
+~ F2i_B__Hi = -4.11
 
 K = 1500
 ## carrying capacity; currently hard-coded in RunSimulationFunction.R

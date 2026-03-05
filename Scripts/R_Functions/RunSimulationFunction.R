@@ -29,7 +29,7 @@ RunSimulationReplicates <- function(land_grid_list, parameters, variables, cpp_f
     list2env(parameters, .GlobalEnv)
 
     # looping table for mapply
-    lvtable <- expand.grid(vars = seq(nrow(variables)), land = 1:2, rep = seq(reps))
+    lvtable <- expand.grid(vars = seq(nrow(variables)), land = 1:length(land_grid_list), rep = seq(reps))
 #     lvtable <- expand.grid(vars = seq(nrow(variables)), land = seq(length(land_grid_list)), rep = seq(reps))
 
     # movement parameters from NND landscape selection

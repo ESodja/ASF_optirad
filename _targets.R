@@ -63,7 +63,8 @@ list(
     tar_target(parameters_txt, file.path("Parameters.txt"), format="file"),
 
     ### Input landscapes directory: -----------
-    tar_target(lands_path, file.path("Input","lands"), format="file"),
+    tar_target(lands_path, file.path("Landscape_Setup","NND_Lands","4_Output", "sel_plands"), format="file"),
+#     tar_target(lands_path, file.path("Input","lands"), format="file"),
 
     ## Get names of land tiles in order so we can associate lands with their data previously calculated
     tar_target(lands_names, data.table(land = seq(1, length(list.files(lands_path))), file = list.files(lands_path))),
